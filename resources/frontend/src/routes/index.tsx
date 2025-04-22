@@ -6,7 +6,10 @@ import {
     useLocation,
 } from "react-router-dom";
 import Dashboard from "../pages/dashboard";
-import Projects from "../pages/projects";
+import Projects from "../pages/projects/projects";
+import Register from "../pages/auth/register";
+import Login from "../pages/auth/login";
+import ProjectDetail from "../pages/projects/project-detail";
 
 const Wrapper = ({ children }: PropsWithChildren) => {
     const location = useLocation();
@@ -20,16 +23,25 @@ const Wrapper = ({ children }: PropsWithChildren) => {
 const routes = [
     {
         path: "/",
-        element: (
-            <Dashboard />
-        ),
+        element: <Dashboard />,
+    },
+    {
+        path: "/login",
+        element: <Login />,
+    },
+    {
+        path: "/register",
+        element: <Register />,
     },
     {
         path: "/projects",
-        element: (
-            <Projects />
-        ),
+        element: <Projects />,
     },
+    {
+        path: "/project-detail",
+        element: <ProjectDetail />,
+    },
+
 ];
 
 const AppRoutes: React.FC = () => {
