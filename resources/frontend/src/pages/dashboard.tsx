@@ -52,6 +52,7 @@ const Dashboard = () => {
     const totalWidth = features.length * featureWidth;
 
     // Animation liên tục
+    // Animation liên tục
     useEffect(() => {
         controls.start({
             x: -totalWidth,
@@ -59,7 +60,7 @@ const Dashboard = () => {
                 x: {
                     repeat: Infinity,
                     repeatType: "loop",
-                    duration: 10, // Tốc độ rất chậm: 20 giây cho 1 chu kỳ
+                    duration: 25, // Chạy chậm hơn: 20s cho 1 chu kỳ
                     ease: "linear",
                 },
             },
@@ -152,22 +153,7 @@ const Dashboard = () => {
                         className="flex"
                         animate={controls}
                         style={{ width: totalWidth * 2 }} // Nhân đôi để lặp lại mượt mà
-                        onHoverStart={() => controls.stop()} // Dừng khi hover
-                        onHoverEnd={() =>
-                            controls.start({
-                                x: -totalWidth,
-                                transition: {
-                                    x: {
-                                        repeat: Infinity,
-                                        repeatType: "loop",
-                                        duration: 10,
-                                        ease: "linear",
-                                    },
-                                },
-                            })
-                        } // Tiếp tục khi rời hover
                     >
-                        {/* Render features 2 lần để tạo hiệu ứng lặp vô hạn */}
                         {[...features, ...features].map((feature, index) => {
                             const Icon = feature.icon;
                             return (
