@@ -7,6 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="https://icons.veryicon.com/png/o/business/scientific-research-project-icon-library/project-closing-management.png" />
     <title>TeamTasker</title>
     @viteReactRefresh
     @vite('resources/frontend/src/main.tsx')

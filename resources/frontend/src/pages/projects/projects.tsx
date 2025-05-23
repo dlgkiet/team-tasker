@@ -73,7 +73,7 @@ const Projects = () => {
 
     return (
         <Layout>
-            <div className="px-6 py-8 max-w-7xl mx-auto bg-white dark:bg-[#020817] min-h-screen">
+            <div className="px-6 py-8 max-w-7xl mx-auto min-h-screen">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <h1 className="text-2xl font-bold">Projects</h1>
@@ -103,9 +103,9 @@ const Projects = () => {
                             {/* Card với hiệu ứng di chuyển */}
                             <Card
                                 onClick={() =>
-                                    navigate(`/project-detail`)
+                                    navigate(`/projects/${project.id}`)
                                 }
-                                className="cursor-pointer transition-all duration-300 group-hover:-translate-x-2 group-hover:-translate-y-2 relative z-10 bg-white dark:bg-[#0F172A] dark:border-white"
+                                className="bg-background border-white cursor-pointer transition-all duration-300 group-hover:-translate-x-2 group-hover:-translate-y-2 relative z-10"
                             >
                                 <CardContent className="p-4 space-y-2">
                                     <h2 className="text-lg font-semibold text-primary">

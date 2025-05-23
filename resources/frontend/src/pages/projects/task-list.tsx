@@ -10,16 +10,18 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Trash2, Check, Pencil } from "lucide-react";
+import { Trash2, Check, Pencil, Clock } from "lucide-react";
 import {
     Select,
     SelectTrigger,
     SelectContent,
     SelectItem,
+    SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import clsx from "clsx";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Define interfaces for our types
@@ -27,7 +29,7 @@ interface Task {
     id: number;
     name: string;
     members: string[];
-    status: "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Doing" | "Done";
     dueDate: string;
 }
 
@@ -41,13 +43,12 @@ interface EditTaskState {
     id: number | null;
     name: string;
     members: string;
-    status: "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Doing" | "Done";
     dueDate: string;
 }
 
 const TaskList: React.FC = () => {
     const mockUsers = ["RA", "C", "RC", "H", "T", "N", "D"];
-
     const initialTasks: Task[] = [
         {
             id: 1,
@@ -70,6 +71,13 @@ const TaskList: React.FC = () => {
             status: "Done",
             dueDate: "2025-04-22T22:00:00",
         },
+        {
+            id: 4,
+            name: "Database Design",
+            members: ["N", "D"],
+            status: "Untagged",
+            dueDate: "2025-06-15T14:00:00",
+        },
     ];
 
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
@@ -83,17 +91,16 @@ const TaskList: React.FC = () => {
         id: null,
         name: "",
         members: "",
-        status: "To Do",
+        status: "Untagged",
         dueDate: "",
     });
 
     // Calculate remaining time for due dates
     const formatDeadlineInfo = (
         dueDate: string
-    ): { deadline: string; remaining: string } => {
+    ): { deadline: string; remaining: string; isOverdue: boolean } => {
         const due = new Date(dueDate);
         const now = new Date();
-
         const deadline = due.toLocaleString("en-GB", {
             day: "2-digit",
             month: "2-digit",
@@ -110,15 +117,18 @@ const TaskList: React.FC = () => {
         );
 
         let remaining: string;
+        let isOverdue = false;
+
         if (diffMs < 0) {
             remaining = "Overdue";
+            isOverdue = true;
         } else if (diffDays > 0) {
             remaining = `${diffDays} day${diffDays > 1 ? "s" : ""} left`;
         } else {
             remaining = `${diffHours} hour${diffHours > 1 ? "s" : ""} left`;
         }
 
-        return { deadline, remaining };
+        return { deadline, remaining, isOverdue };
     };
 
     const toggleSelectAll = (): void => {
@@ -178,162 +188,202 @@ const TaskList: React.FC = () => {
                         : t
                 )
             );
+            toast.success("Task updated successfully!");
         }
         setDialog({ open: false, type: "", id: null });
     };
 
-    const getStatusColor = (status: "To Do" | "Doing" | "Done"): string => {
+    const getStatusVariant = (status: "Untagged" | "To Do" | "Doing" | "Done") => {
         switch (status) {
+            case "Untagged":
+                return "secondary";
             case "To Do":
-                return "text-gray-800 bg-gray-200 dark:bg-gray-700 dark:text-gray-100";
+                return "outline";
             case "Doing":
-                return "text-yellow-800 bg-yellow-200 dark:bg-yellow-400 dark:text-white hover:dark:bg-yellow-400";
+                return "default";
             case "Done":
-                return "text-green-800 bg-green-200 dark:bg-green-400 dark:text-white hover:dark:bg-green-400";
+                return "default";
             default:
-                return "bg-slate-300 text-slate-800";
+                return "secondary";
+        }
+    };
+
+    const getStatusColor = (status: "Untagged" | "To Do" | "Doing" | "Done"): string => {
+        switch (status) {
+            case "Untagged":
+                return "bg-muted text-muted-foreground border-muted";
+            case "To Do":
+                return "bg-red-200 text-red-800 border-red-300 dark:bg-red-300/20 dark:text-red-300 dark:border-red-300";
+            case "Doing":
+                return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-200/20 dark:text-amber-300 dark:border-amber-200";
+            case "Done":
+                return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800";
+            default:
+                return "bg-muted text-muted-foreground border-muted";
         }
     };
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-md shadow overflow-x-auto">
-            <table className="min-w-full table-auto border-collapse">
-                <thead className="bg-slate-100 dark:bg-slate-800 text-sm text-slate-700 dark:text-slate-300">
-                    <tr>
-                        <th className="text-left p-3 w-10">
-                            <Checkbox
-                                checked={
-                                    selectedIds.length === tasks.length &&
-                                    tasks.length > 0
-                                }
-                                onCheckedChange={toggleSelectAll}
-                            />
-                        </th>
-                        <th className="text-left p-3">Name</th>
-                        <th className="text-left p-3">Members</th>
-                        <th className="text-left p-3">Status</th>
-                        <th className="text-left p-3">Due Date</th>
-                        <th className="text-left p-3">Tools</th>
-                    </tr>
-                </thead>
-                <tbody className="text-sm">
-                    {tasks.map((task) => (
-                        <tr
-                            key={task.id}
-                            className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
-                        >
-                            <td className="p-3">
-                                <Checkbox
-                                    checked={selectedIds.includes(task.id)}
-                                    onCheckedChange={(
-                                        checked: boolean | "indeterminate"
-                                    ) =>
-                                        setSelectedIds((prev) =>
-                                            checked === true
-                                                ? [...prev, task.id]
-                                                : prev.filter(
-                                                      (id) => id !== task.id
-                                                  )
-                                        )
-                                    }
-                                />
-                            </td>
-                            <td className="p-3 font-medium">{task.name}</td>
-                            <td className="p-3 flex -space-x-2">
-                                {task.members.map((m, i) => (
-                                    <Avatar
-                                        key={i}
-                                        className="w-6 h-6 border-2 border-white dark:border-slate-900"
-                                    >
-                                        <AvatarFallback>{m}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </td>
-                            <td className="p-3">
-                                <Select
-                                    value={task.status}
-                                    onValueChange={(
-                                        val: "To Do" | "Doing" | "Done"
-                                    ) =>
-                                        setTasks((prev) =>
-                                            prev.map((t) =>
-                                                t.id === task.id
-                                                    ? { ...t, status: val }
-                                                    : t
-                                            )
-                                        )
-                                    }
-                                >
-                                    <SelectTrigger
-                                        className={clsx(
-                                            "w-32",
-                                            getStatusColor(task.status)
-                                        )}
-                                    >
-                                        {task.status}
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="To Do">
-                                            To Do
-                                        </SelectItem>
-                                        <SelectItem value="Doing">
-                                            Doing
-                                        </SelectItem>
-                                        <SelectItem value="Done">
-                                            Done
-                                        </SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </td>
-                            <td className="p-3">
-                                {(() => {
-                                    const { deadline, remaining } =
-                                        formatDeadlineInfo(task.dueDate);
-                                    return (
-                                        <div>
-                                            <div>{deadline}</div>
-                                            <div className="text-xs text-slate-500 dark:text-slate-400">
-                                                {remaining}
-                                            </div>
-                                        </div>
-                                    );
-                                })()}
-                            </td>
-
-                            <td className="p-3">
-                                <div className="flex gap-2">
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() => handleEdit(task)}
-                                        className="w-8 h-8"
-                                    >
-                                        <Pencil className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() =>
-                                            handleCheckToggle(task.id)
+        <Card className="w-full bg-background py-0">
+            <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                    <table className="w-full">
+                        <thead>
+                            <tr className="border-b border-border bg-muted/50">
+                                <th className="text-left p-4 w-12">
+                                    <Checkbox
+                                        checked={
+                                            selectedIds.length === tasks.length &&
+                                            tasks.length > 0
                                         }
-                                        className="w-8 h-8"
-                                    >
-                                        <Check className="w-4 h-4" />
-                                    </Button>
-                                    <Button
-                                        variant="destructive"
-                                        size="icon"
-                                        onClick={() => handleDelete(task.id)}
-                                        className="w-8 h-8"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+                                        onCheckedChange={toggleSelectAll}
+                                    />
+                                </th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">Name</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">Members</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">Due Date</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tasks.map((task) => (
+                                <tr
+                                    key={task.id}
+                                    className="border-b border-border hover:bg-muted/30 transition-colors"
+                                >
+                                    <td className="p-4">
+                                        <Checkbox
+                                            checked={selectedIds.includes(task.id)}
+                                            onCheckedChange={(
+                                                checked: boolean | "indeterminate"
+                                            ) =>
+                                                setSelectedIds((prev) =>
+                                                    checked === true
+                                                        ? [...prev, task.id]
+                                                        : prev.filter(
+                                                              (id) => id !== task.id
+                                                          )
+                                                )
+                                            }
+                                        />
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="font-medium text-foreground">
+                                            {task.name}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex -space-x-2">
+                                            {task.members.map((m, i) => (
+                                                <Avatar
+                                                    key={i}
+                                                    className="w-7 h-7 border-2 border-background"
+                                                >
+                                                    <AvatarFallback className="text-xs font-medium">
+                                                        {m}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <Select
+                                            value={task.status}
+                                            onValueChange={(
+                                                val: "Untagged" | "To Do" | "Doing" | "Done"
+                                            ) =>
+                                                setTasks((prev) =>
+                                                    prev.map((t) =>
+                                                        t.id === task.id
+                                                            ? { ...t, status: val }
+                                                            : t
+                                                    )
+                                                )
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                className={cn(
+                                                    "w-32 h-8 text-xs",
+                                                    getStatusColor(task.status)
+                                                )}
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Untagged">
+                                                    Untagged
+                                                </SelectItem>
+                                                <SelectItem value="To Do">
+                                                    To Do
+                                                </SelectItem>
+                                                <SelectItem value="Doing">
+                                                    Doing
+                                                </SelectItem>
+                                                <SelectItem value="Done">
+                                                    Done
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </td>
+                                    <td className="p-4">
+                                        {(() => {
+                                            const { deadline, remaining, isOverdue } =
+                                                formatDeadlineInfo(task.dueDate);
+                                            return (
+                                                <div className="space-y-1">
+                                                    <div className="text-sm font-medium text-foreground">
+                                                        {deadline}
+                                                    </div>
+                                                    <div className={cn(
+                                                        "text-xs flex items-center gap-1",
+                                                        isOverdue 
+                                                            ? "text-destructive" 
+                                                            : "text-muted-foreground"
+                                                    )}>
+                                                        <Clock className="w-3 h-3" />
+                                                        {remaining}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleEdit(task)}
+                                                className="h-8 w-8"
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() =>
+                                                    handleCheckToggle(task.id)
+                                                }
+                                                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleDelete(task.id)}
+                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </CardContent>
 
             {/* Confirmation Dialog */}
             <Dialog
@@ -345,22 +395,23 @@ const TaskList: React.FC = () => {
                     !open && setDialog({ open: false, type: "", id: null })
                 }
             >
-                <DialogContent>
+                <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>
                             {dialog.type === "delete"
                                 ? "Delete Task"
-                                : "Mark as Done"}
+                                : "Mark as Complete"}
                         </DialogTitle>
                     </DialogHeader>
-                    <p className="text-sm text-slate-600 dark:text-slate-300">
-                        Are you sure you want to{" "}
-                        {dialog.type === "delete"
-                            ? "delete this task"
-                            : "mark it as done"}
-                        ?
-                    </p>
-                    <DialogFooter className="mt-4">
+                    <div className="py-4">
+                        <p className="text-sm text-muted-foreground">
+                            Are you sure you want to{" "}
+                            {dialog.type === "delete"
+                                ? "delete this task? This action cannot be undone."
+                                : "mark this task as complete?"}
+                        </p>
+                    </div>
+                    <DialogFooter className="gap-2">
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -369,7 +420,12 @@ const TaskList: React.FC = () => {
                         >
                             Cancel
                         </Button>
-                        <Button onClick={confirmAction}>Confirm</Button>
+                        <Button 
+                            onClick={confirmAction}
+                            variant={dialog.type === "delete" ? "destructive" : "default"}
+                        >
+                            {dialog.type === "delete" ? "Delete" : "Mark Complete"}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
@@ -385,7 +441,7 @@ const TaskList: React.FC = () => {
                     <DialogHeader>
                         <DialogTitle>Edit Task</DialogTitle>
                     </DialogHeader>
-                    <div className="space-y-4 py-2">
+                    <div className="space-y-6 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="name">Task Name</Label>
                             <Input
@@ -399,18 +455,22 @@ const TaskList: React.FC = () => {
                                         name: e.target.value,
                                     })
                                 }
+                                className="w-full"
                             />
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="members">Members</Label>
+
+                        <div className="space-y-3">
+                            <Label>Team Members</Label>
                             <div className="flex flex-wrap gap-2">
                                 {mockUsers.map((user) => (
                                     <Badge
                                         key={user}
+                                        variant="secondary"
                                         onClick={() => {
                                             const selected = editTask.members
                                                 .split(",")
-                                                .map((m) => m.trim());
+                                                .map((m) => m.trim())
+                                                .filter(m => m);
                                             const isSelected =
                                                 selected.includes(user);
                                             const updated = isSelected
@@ -423,14 +483,14 @@ const TaskList: React.FC = () => {
                                                 members: updated.join(", "),
                                             });
                                         }}
-                                        className={clsx(
-                                            "cursor-pointer",
+                                        className={cn(
+                                            "cursor-pointer transition-colors hover:scale-105",
                                             editTask.members
                                                 .split(",")
                                                 .map((m) => m.trim())
                                                 .includes(user)
-                                                ? "bg-blue-500 text-white"
-                                                : "bg-slate-200 dark:bg-slate-700"
+                                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                                                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                                         )}
                                     >
                                         {user}
@@ -444,38 +504,42 @@ const TaskList: React.FC = () => {
                             <Select
                                 value={editTask.status}
                                 onValueChange={(
-                                    value: "To Do" | "Doing" | "Done"
+                                    value: "Untagged" | "To Do" | "Doing" | "Done"
                                 ) =>
                                     setEditTask({ ...editTask, status: value })
                                 }
                             >
                                 <SelectTrigger id="status">
-                                    {editTask.status}
+                                    <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
+                                    <SelectItem value="Untagged">Untagged</SelectItem>
                                     <SelectItem value="To Do">To Do</SelectItem>
                                     <SelectItem value="Doing">Doing</SelectItem>
                                     <SelectItem value="Done">Done</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
+
                         <div className="space-y-2">
                             <Label htmlFor="dueDate">Due Date</Label>
                             <Input
                                 id="dueDate"
-                                value={editTask.dueDate}
+                                type="datetime-local"
+                                value={editTask.dueDate.slice(0, 16)}
                                 onChange={(
                                     e: React.ChangeEvent<HTMLInputElement>
                                 ) =>
                                     setEditTask({
                                         ...editTask,
-                                        dueDate: e.target.value,
+                                        dueDate: e.target.value + ":00",
                                     })
                                 }
+                                className="[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:dark:filter [&::-webkit-calendar-picker-indicator]:dark:invert"
                             />
                         </div>
                     </div>
-                    <DialogFooter className="mt-4">
+                    <DialogFooter className="gap-2">
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -488,7 +552,7 @@ const TaskList: React.FC = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </div>
+        </Card>
     );
 };
 

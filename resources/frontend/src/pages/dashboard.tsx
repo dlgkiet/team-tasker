@@ -52,7 +52,6 @@ const Dashboard = () => {
     const totalWidth = features.length * featureWidth;
 
     // Animation liên tục
-    // Animation liên tục
     useEffect(() => {
         controls.start({
             x: -totalWidth,
@@ -111,14 +110,14 @@ const Dashboard = () => {
                 {/* CTA Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 mt-2">
                     <Link to="/login">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-white dark:text-black dark:hover:bg-white/80 px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer transition-all duration-300 transform hover:scale-105 w-full sm:w-auto">
+                        <Button className="px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer transition-all duration-300 transform hover:scale-105 w-full sm:w-auto">
                             GET STARTED FOR FREE
                         </Button>
                     </Link>
                     <Button
                         asChild
                         variant="outline"
-                        className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:border-white dark:text-white dark:hover:bg-white/10 px-6 py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
+                        className="px-6 py-3 rounded-lg font-bold shadow-md cursor-pointer transition-all duration-300 transform hover:scale-105 w-full sm:w-auto"
                     >
                         <a
                             href="https://github.com/dlgkiet/team-tasker"
@@ -159,13 +158,13 @@ const Dashboard = () => {
                             return (
                                 <div
                                     key={index}
-                                    className="bg-black/5 dark:bg-white/5 backdrop-blur-md p-6 rounded-xl shadow-md text-left w-full max-w-sm mx-2"
+                                    className="bgroup relative bg-card border border-border/50 hover:border-border p-6 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 text-left w-full max-w-sm mx-2 backdrop-blur-sm"
                                 >
                                     <Icon className="w-6 h-6 mb-3 text-indigo-500" />
                                     <h3 className="font-semibold text-lg mb-1">
                                         {feature.title}
                                     </h3>
-                                    <p className="text-sm text-slate-600 dark:text-white/70">
+                                    <p className="text-sm">
                                         {feature.description}
                                     </p>
                                 </div>

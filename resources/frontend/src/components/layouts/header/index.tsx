@@ -44,12 +44,12 @@ export default function Header() {
     };
 
     return (
-        <header className="sticky top-0 w-full z-50 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-white/10 shadow-sm dark:shadow-sm px-6 py-4 flex items-center justify-between transition-colors duration-300">
+        <header className="sticky top-0 w-full z-50 bg-background border-b border-border shadow-sm px-6 py-4 flex items-center justify-between transition-colors duration-300">
             {/* Left: Logo */}
             <div className="flex-shrink-0 z-10">
                 <Link
                     to="/"
-                    className="text-xl font-bold text-primary hover:text-primary/80 dark:hover:text-primary/90 transition-colors cursor-pointer"
+                    className="text-xl font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
                 >
                     TeamTasker
                 </Link>
@@ -61,7 +61,7 @@ export default function Header() {
                     <Link
                         key={link.path}
                         to={link.path}
-                        className="text-sm font-medium text-slate-700 dark:text-white/80 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-white/5 px-3 py-2 rounded-md transition-all cursor-pointer"
+                        className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent px-3 py-2 rounded-md transition-all cursor-pointer"
                     >
                         {link.name}
                     </Link>
@@ -76,7 +76,7 @@ export default function Header() {
                         className={cn(
                             "h-4 w-4 transition-all duration-300",
                             theme === "dark"
-                                ? "text-gray-400 opacity-50 scale-90"
+                                ? "text-muted-foreground opacity-50 scale-90"
                                 : "text-amber-500 opacity-100 scale-100"
                         )}
                     />
@@ -93,7 +93,7 @@ export default function Header() {
                             "h-4 w-4 transition-all duration-300",
                             theme === "dark"
                                 ? "text-blue-400 opacity-100 scale-100"
-                                : "text-gray-400 opacity-50 scale-90"
+                                : "text-muted-foreground opacity-50 scale-90"
                         )}
                     />
                 </div>
@@ -103,7 +103,7 @@ export default function Header() {
                         <DropdownMenuTrigger asChild>
                             <Button
                                 variant="ghost"
-                                className="p-0 rounded-full cursor-pointer hover:bg-accent/50 dark:hover:bg-accent/50"
+                                className="p-0 rounded-full cursor-pointer hover:bg-accent"
                             >
                                 <Avatar>
                                     <AvatarImage
@@ -116,10 +116,12 @@ export default function Header() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-accent dark:hover:bg-accent">
-                                Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-accent dark:hover:bg-accent">
+                            <Link to="/profile">
+                                <DropdownMenuItem className="cursor-pointer">
+                                    Profile
+                                </DropdownMenuItem>
+                            </Link>
+                            <DropdownMenuItem className="cursor-pointer">
                                 Logout
                             </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -166,7 +168,7 @@ export default function Header() {
                                                 className={cn(
                                                     "h-4 w-4 transition-all duration-300",
                                                     theme === "dark"
-                                                        ? "text-gray-400 opacity-50 scale-90"
+                                                        ? "text-muted-foreground opacity-50 scale-90"
                                                         : "text-amber-500 opacity-100 scale-100"
                                                 )}
                                             />
@@ -183,7 +185,7 @@ export default function Header() {
                                                     "h-4 w-4 transition-all duration-300",
                                                     theme === "dark"
                                                         ? "text-blue-400 opacity-100 scale-100"
-                                                        : "text-gray-400 opacity-50 scale-90"
+                                                        : "text-muted-foreground opacity-50 scale-90"
                                                 )}
                                             />
                                         </div>
@@ -191,7 +193,7 @@ export default function Header() {
                                             <DropdownMenuTrigger asChild>
                                                 <Button
                                                     variant="ghost"
-                                                    className="p-0 rounded-full cursor-pointer hover:bg-accent/50 dark:hover:bg-accent/50"
+                                                    className="p-0 rounded-full cursor-pointer hover:bg-accent"
                                                 >
                                                     <Avatar>
                                                         <AvatarImage
@@ -208,10 +210,10 @@ export default function Header() {
                                                 <DropdownMenuLabel>
                                                     My Account
                                                 </DropdownMenuLabel>
-                                                <DropdownMenuItem className="cursor-pointer hover:bg-accent dark:hover:bg-accent">
+                                                <DropdownMenuItem className="cursor-pointer">
                                                     Profile
                                                 </DropdownMenuItem>
-                                                <DropdownMenuItem className="cursor-pointer hover:bg-accent dark:hover:bg-accent">
+                                                <DropdownMenuItem className="cursor-pointer">
                                                     Logout
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
@@ -223,7 +225,7 @@ export default function Header() {
                                             <Link
                                                 key={link.path}
                                                 to={link.path}
-                                                className="text-sm font-medium text-slate-700 dark:text-white/80 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-white/5 px-3 py-2 rounded-md transition-all cursor-pointer text-left"
+                                                className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent px-3 py-2 rounded-md transition-all cursor-pointer text-left"
                                             >
                                                 {link.name}
                                             </Link>
@@ -238,7 +240,7 @@ export default function Header() {
                                             className={cn(
                                                 "h-4 w-4 transition-all duration-300",
                                                 theme === "dark"
-                                                    ? "text-gray-400 opacity-50 scale-90"
+                                                    ? "text-muted-foreground opacity-50 scale-90"
                                                     : "text-amber-500 opacity-100 scale-100"
                                             )}
                                         />
@@ -255,7 +257,7 @@ export default function Header() {
                                                 "h-4 w-4 transition-all duration-300",
                                                 theme === "dark"
                                                     ? "text-blue-400 opacity-100 scale-100"
-                                                    : "text-gray-400 opacity-50 scale-90"
+                                                    : "text-muted-foreground opacity-50 scale-90"
                                             )}
                                         />
                                     </div>
@@ -265,7 +267,7 @@ export default function Header() {
                                             <Link
                                                 key={link.path}
                                                 to={link.path}
-                                                className="text-sm font-medium text-slate-700 dark:text-white/80 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-white/5 px-3 py-2 rounded-md transition-all cursor-pointer text-left"
+                                                className="text-sm font-medium text-muted-foreground hover:text-primary hover:bg-accent px-3 py-2 rounded-md transition-all cursor-pointer text-left"
                                             >
                                                 {link.name}
                                             </Link>

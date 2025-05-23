@@ -27,7 +27,7 @@ interface Task {
     id: number;
     name: string;
     members: string[];
-    status: "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Doing" | "Done";
     dueDate: string;
 }
 
@@ -88,12 +88,12 @@ const SortableTask = ({
             style={style}
             {...attributes}
             {...listeners}
-            className={`rounded-xl shadow-md bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow cursor-grab active:cursor-grabbing ${
-                isOverlay ? "ring-2 ring-indigo-500" : ""
+            className={`rounded-xl shadow-md bg-background hover:shadow-lg transition-shadow cursor-grab active:cursor-grabbing ${
+                isOverlay ? "ring-2 ring-white" : ""
             }`}
         >
             <CardContent className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                <h3 className="text-lg font-semibold">
                     {task.name}
                 </h3>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -112,10 +112,12 @@ const SortableTask = ({
                 <span
                     className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
                         task.status === "To Do"
-                            ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200"
+                            ? "bg-red-200 text-red-800 dark:bg-red-300/20 dark:text-red-300"
                             : task.status === "Doing"
-                            ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-200"
-                            : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-200"
+                            ? "bg-amber-100 text-amber-800 dark:bg-amber-200/20 dark:text-amber-300"
+                            : task.status === "Done"?
+                            "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
+                            : "bg-muted text-muted-foreground"
                     }`}
                 >
                     {task.status}
@@ -131,7 +133,7 @@ const BoardColumn = ({
     tasks,
     isOverlay,
 }: {
-    status: "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Doing" | "Done";
     tasks: Task[];
     isOverlay?: boolean;
 }) => {
@@ -139,8 +141,8 @@ const BoardColumn = ({
 
     return (
         <div
-            className={`bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm w-full max-w-full flex-shrink-0 ${
-                isOverlay ? "ring-2 ring-indigo-500" : ""
+            className={`bg-white dark:bg-[#2F2F2F] rounded-xl p-4 shadow-sm w-full max-w-full flex-shrink-0 ${
+                isOverlay ? "ring-2 ring-white" : ""
             }`}
         >
             <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center justify-between">
@@ -188,7 +190,7 @@ const DroppableColumnZone = ({
 const KanbanBoard = () => {
     const [tasks, setTasks] = useState(initialTasks);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
-    const columns: ("To Do" | "Doing" | "Done")[] = ["To Do", "Doing", "Done"];
+    const columns: ("Untagged" | "To Do" | "Doing" | "Done")[] = ["Untagged", "To Do", "Doing", "Done"];
     const columnsId = useMemo(
         () => columns.map((col) => col.replace(/\s/g, "")),
         []
@@ -313,6 +315,7 @@ const KanbanBoard = () => {
 
         // Thả task vào cột
         const isOverAColumn = columnsId.includes(over.id);
+        
         if (isActiveATask && isOverAColumn) {
             setTasks((prevTasks) => {
                 const activeIndex = prevTasks.findIndex(
@@ -338,7 +341,7 @@ const KanbanBoard = () => {
             onDragOver={onDragOver}
             onDragEnd={onDragEnd}
         >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-900 min-h-screen">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-h-screen">
                 <SortableContext items={columnsId}>
                     {columns.map((col) => (
                         <BoardColumn

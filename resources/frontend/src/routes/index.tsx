@@ -10,6 +10,7 @@ import Projects from "../pages/projects/projects";
 import Register from "../pages/auth/register";
 import Login from "../pages/auth/login";
 import ProjectDetail from "../pages/projects/project-detail";
+import Profile from "../pages/settings/profile";
 
 const Wrapper = ({ children }: PropsWithChildren) => {
     const location = useLocation();
@@ -38,10 +39,13 @@ const routes = [
         element: <Projects />,
     },
     {
-        path: "/project-detail",
+        path: "/projects/:projectId",
         element: <ProjectDetail />,
     },
-
+    {
+        path: "/profile",
+        element: <Profile />,
+    },
 ];
 
 const AppRoutes: React.FC = () => {

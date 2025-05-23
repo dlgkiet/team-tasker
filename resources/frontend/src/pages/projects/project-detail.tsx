@@ -1,16 +1,28 @@
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus } from "lucide-react";
 import TaskList from "./task-list";
 import KanbanBoard from "./kanban-board";
 import Layout from "../../components/layouts";
 import { toast } from "sonner";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Mock users for the member selection
 const mockUsers = ["John", "Sarah", "Mike", "Emma", "Alex"];
@@ -18,14 +30,19 @@ const mockUsers = ["John", "Sarah", "Mike", "Emma", "Alex"];
 const ProjectDetail = () => {
     // State for managing the dialog
     const [dialogOpen, setDialogOpen] = useState(false);
-    
+
     // State for the new task form
     const [newTask, setNewTask] = useState({
         name: "",
         members: "",
-        status: "To Do",
-        dueDate: ""
+        status: "Untagged",
+        dueDate: "",
     });
+
+    const [searchParams, setSearchParams] = useSearchParams();
+    const navigate = useNavigate();
+
+    const currentTab = searchParams.get("tab") || "task-list";
 
     // Function to handle adding a new task
     const handleAddTask = () => {
@@ -36,8 +53,8 @@ const ProjectDetail = () => {
         setNewTask({
             name: "",
             members: "",
-            status: "To Do",
-            dueDate: ""
+            status: "Untagged",
+            dueDate: "",
         });
         setDialogOpen(false);
     };
@@ -51,8 +68,14 @@ const ProjectDetail = () => {
                         <Plus className="mr-2 h-4 w-4" /> New Task
                     </Button>
                 </div>
-                
-                <Tabs defaultValue="task-list" className="w-full">
+
+                <Tabs
+                    value={currentTab}
+                    className="w-full"
+                    onValueChange={(value) => {
+                        setSearchParams({ tab: value });
+                    }}
+                >
                     <TabsList className="mb-4">
                         <TabsTrigger value="task-list">Task List</TabsTrigger>
                         <TabsTrigger value="kanban">Kanban Board</TabsTrigger>
@@ -80,10 +103,12 @@ const ProjectDetail = () => {
                             <Input
                                 id="name"
                                 value={newTask.name}
-                                onChange={(e) => setNewTask({
-                                    ...newTask,
-                                    name: e.target.value
-                                })}
+                                onChange={(e) =>
+                                    setNewTask({
+                                        ...newTask,
+                                        name: e.target.value,
+                                    })
+                                }
                                 placeholder="Enter task name"
                             />
                         </div>
@@ -98,22 +123,25 @@ const ProjectDetail = () => {
                                                 .split(",")
                                                 .map((m) => m.trim())
                                                 .filter(Boolean);
-                                            const isSelected = selected.includes(user);
+                                            const isSelected =
+                                                selected.includes(user);
                                             const updated = isSelected
-                                                ? selected.filter((m) => m !== user)
+                                                ? selected.filter(
+                                                      (m) => m !== user
+                                                  )
                                                 : [...selected, user];
                                             setNewTask({
                                                 ...newTask,
-                                                members: updated.join(", ")
+                                                members: updated.join(", "),
                                             });
                                         }}
-                                        className={`cursor-pointer ${
+                                        className={`cursor-pointer transition-all duration-200 border rounded-md px-3 py-2 text-sm font-medium ${
                                             newTask.members
                                                 .split(",")
                                                 .map((m) => m.trim())
                                                 .includes(user)
-                                                ? "bg-blue-500 text-white"
-                                                : "bg-slate-200 dark:bg-slate-700"
+                                                ? "bg-primary text-primary-foreground border-primary shadow-sm ring-2 ring-primary/20"
+                                                : "bg-secondary text-secondary-foreground border-border hover:bg-secondary/80 hover:border-border/80"
                                         }`}
                                     >
                                         {user}
@@ -125,10 +153,12 @@ const ProjectDetail = () => {
                             <Label htmlFor="status">Status</Label>
                             <Select
                                 value={newTask.status}
-                                onValueChange={(value) => setNewTask({ 
-                                    ...newTask, 
-                                    status: value 
-                                })}
+                                onValueChange={(value) =>
+                                    setNewTask({
+                                        ...newTask,
+                                        status: value,
+                                    })
+                                }
                             >
                                 <SelectTrigger id="status">
                                     {newTask.status}
@@ -146,10 +176,13 @@ const ProjectDetail = () => {
                                 id="dueDate"
                                 type="date"
                                 value={newTask.dueDate}
-                                onChange={(e) => setNewTask({
-                                    ...newTask,
-                                    dueDate: e.target.value
-                                })}
+                                onChange={(e) =>
+                                    setNewTask({
+                                        ...newTask,
+                                        dueDate: e.target.value,
+                                    })
+                                }
+                                className="[color-scheme:light] dark:[color-scheme:dark] [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:brightness-0 [&::-webkit-calendar-picker-indicator]:invert-0 dark:[&::-webkit-calendar-picker-indicator]:brightness-0 dark:[&::-webkit-calendar-picker-indicator]:invert"
                             />
                         </div>
                     </div>
@@ -160,9 +193,7 @@ const ProjectDetail = () => {
                         >
                             Cancel
                         </Button>
-                        <Button onClick={handleAddTask}>
-                            Add Task
-                        </Button>
+                        <Button onClick={handleAddTask}>Add Task</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
