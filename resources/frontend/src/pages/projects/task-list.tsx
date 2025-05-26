@@ -29,7 +29,7 @@ interface Task {
     id: number;
     name: string;
     members: string[];
-    status: "Untagged" | "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Processing" | "Done";
     dueDate: string;
 }
 
@@ -43,7 +43,7 @@ interface EditTaskState {
     id: number | null;
     name: string;
     members: string;
-    status: "Untagged" | "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Processing" | "Done";
     dueDate: string;
 }
 
@@ -61,7 +61,7 @@ const TaskList: React.FC = () => {
             id: 2,
             name: "Unit Testing",
             members: ["RC", "H"],
-            status: "Doing",
+            status: "Processing",
             dueDate: "2025-09-13T16:00:00",
         },
         {
@@ -193,13 +193,15 @@ const TaskList: React.FC = () => {
         setDialog({ open: false, type: "", id: null });
     };
 
-    const getStatusVariant = (status: "Untagged" | "To Do" | "Doing" | "Done") => {
+    const getStatusVariant = (
+        status: "Untagged" | "To Do" | "Processing" | "Done"
+    ) => {
         switch (status) {
             case "Untagged":
                 return "secondary";
             case "To Do":
                 return "outline";
-            case "Doing":
+            case "Processing":
                 return "default";
             case "Done":
                 return "default";
@@ -208,13 +210,15 @@ const TaskList: React.FC = () => {
         }
     };
 
-    const getStatusColor = (status: "Untagged" | "To Do" | "Doing" | "Done"): string => {
+    const getStatusColor = (
+        status: "Untagged" | "To Do" | "Processing" | "Done"
+    ): string => {
         switch (status) {
             case "Untagged":
                 return "bg-muted text-muted-foreground border-muted";
             case "To Do":
                 return "bg-red-200 text-red-800 border-red-300 dark:bg-red-300/20 dark:text-red-300 dark:border-red-300";
-            case "Doing":
+            case "Processing":
                 return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-200/20 dark:text-amber-300 dark:border-amber-200";
             case "Done":
                 return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800";
@@ -233,17 +237,27 @@ const TaskList: React.FC = () => {
                                 <th className="text-left p-4 w-12">
                                     <Checkbox
                                         checked={
-                                            selectedIds.length === tasks.length &&
-                                            tasks.length > 0
+                                            selectedIds.length ===
+                                                tasks.length && tasks.length > 0
                                         }
                                         onCheckedChange={toggleSelectAll}
                                     />
                                 </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">Name</th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">Members</th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">Status</th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">Due Date</th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">Actions</th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">
+                                    Name
+                                </th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">
+                                    Members
+                                </th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">
+                                    Status
+                                </th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">
+                                    Due Date
+                                </th>
+                                <th className="text-left p-4 font-medium text-muted-foreground">
+                                    Actions
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -254,15 +268,20 @@ const TaskList: React.FC = () => {
                                 >
                                     <td className="p-4">
                                         <Checkbox
-                                            checked={selectedIds.includes(task.id)}
+                                            checked={selectedIds.includes(
+                                                task.id
+                                            )}
                                             onCheckedChange={(
-                                                checked: boolean | "indeterminate"
+                                                checked:
+                                                    | boolean
+                                                    | "indeterminate"
                                             ) =>
                                                 setSelectedIds((prev) =>
                                                     checked === true
                                                         ? [...prev, task.id]
                                                         : prev.filter(
-                                                              (id) => id !== task.id
+                                                              (id) =>
+                                                                  id !== task.id
                                                           )
                                                 )
                                             }
@@ -291,12 +310,19 @@ const TaskList: React.FC = () => {
                                         <Select
                                             value={task.status}
                                             onValueChange={(
-                                                val: "Untagged" | "To Do" | "Doing" | "Done"
+                                                val:
+                                                    | "Untagged"
+                                                    | "To Do"
+                                                    | "Processing"
+                                                    | "Done"
                                             ) =>
                                                 setTasks((prev) =>
                                                     prev.map((t) =>
                                                         t.id === task.id
-                                                            ? { ...t, status: val }
+                                                            ? {
+                                                                  ...t,
+                                                                  status: val,
+                                                              }
                                                             : t
                                                     )
                                                 )
@@ -317,8 +343,8 @@ const TaskList: React.FC = () => {
                                                 <SelectItem value="To Do">
                                                     To Do
                                                 </SelectItem>
-                                                <SelectItem value="Doing">
-                                                    Doing
+                                                <SelectItem value="Processing">
+                                                    Processing
                                                 </SelectItem>
                                                 <SelectItem value="Done">
                                                     Done
@@ -328,19 +354,26 @@ const TaskList: React.FC = () => {
                                     </td>
                                     <td className="p-4">
                                         {(() => {
-                                            const { deadline, remaining, isOverdue } =
-                                                formatDeadlineInfo(task.dueDate);
+                                            const {
+                                                deadline,
+                                                remaining,
+                                                isOverdue,
+                                            } = formatDeadlineInfo(
+                                                task.dueDate
+                                            );
                                             return (
                                                 <div className="space-y-1">
                                                     <div className="text-sm font-medium text-foreground">
                                                         {deadline}
                                                     </div>
-                                                    <div className={cn(
-                                                        "text-xs flex items-center gap-1",
-                                                        isOverdue 
-                                                            ? "text-destructive" 
-                                                            : "text-muted-foreground"
-                                                    )}>
+                                                    <div
+                                                        className={cn(
+                                                            "text-xs flex items-center gap-1",
+                                                            isOverdue
+                                                                ? "text-destructive"
+                                                                : "text-muted-foreground"
+                                                        )}
+                                                    >
                                                         <Clock className="w-3 h-3" />
                                                         {remaining}
                                                     </div>
@@ -371,7 +404,9 @@ const TaskList: React.FC = () => {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDelete(task.id)}
+                                                onClick={() =>
+                                                    handleDelete(task.id)
+                                                }
                                                 className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                                             >
                                                 <Trash2 className="w-4 h-4" />
@@ -420,11 +455,17 @@ const TaskList: React.FC = () => {
                         >
                             Cancel
                         </Button>
-                        <Button 
+                        <Button
                             onClick={confirmAction}
-                            variant={dialog.type === "delete" ? "destructive" : "default"}
+                            variant={
+                                dialog.type === "delete"
+                                    ? "destructive"
+                                    : "default"
+                            }
                         >
-                            {dialog.type === "delete" ? "Delete" : "Mark Complete"}
+                            {dialog.type === "delete"
+                                ? "Delete"
+                                : "Mark Complete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -470,7 +511,7 @@ const TaskList: React.FC = () => {
                                             const selected = editTask.members
                                                 .split(",")
                                                 .map((m) => m.trim())
-                                                .filter(m => m);
+                                                .filter((m) => m);
                                             const isSelected =
                                                 selected.includes(user);
                                             const updated = isSelected
@@ -504,7 +545,11 @@ const TaskList: React.FC = () => {
                             <Select
                                 value={editTask.status}
                                 onValueChange={(
-                                    value: "Untagged" | "To Do" | "Doing" | "Done"
+                                    value:
+                                        | "Untagged"
+                                        | "To Do"
+                                        | "Processing"
+                                        | "Done"
                                 ) =>
                                     setEditTask({ ...editTask, status: value })
                                 }
@@ -513,9 +558,13 @@ const TaskList: React.FC = () => {
                                     <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Untagged">Untagged</SelectItem>
+                                    <SelectItem value="Untagged">
+                                        Untagged
+                                    </SelectItem>
                                     <SelectItem value="To Do">To Do</SelectItem>
-                                    <SelectItem value="Doing">Doing</SelectItem>
+                                    <SelectItem value="Processing">
+                                        Processing
+                                    </SelectItem>
                                     <SelectItem value="Done">Done</SelectItem>
                                 </SelectContent>
                             </Select>

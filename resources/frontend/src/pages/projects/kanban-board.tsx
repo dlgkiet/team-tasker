@@ -27,7 +27,7 @@ interface Task {
     id: number;
     name: string;
     members: string[];
-    status: "Untagged" | "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Processing" | "Done";
     dueDate: string;
 }
 
@@ -43,7 +43,7 @@ const initialTasks: Task[] = [
         id: 2,
         name: "Unit Testing",
         members: ["RC", "H"],
-        status: "Doing",
+        status: "Processing",
         dueDate: "2025-09-13T16:00:00",
     },
     {
@@ -93,9 +93,7 @@ const SortableTask = ({
             }`}
         >
             <CardContent className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold">
-                    {task.name}
-                </h3>
+                <h3 className="text-lg font-semibold">{task.name}</h3>
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                     Due: {new Date(task.dueDate).toLocaleDateString()}
                 </div>
@@ -113,10 +111,10 @@ const SortableTask = ({
                     className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
                         task.status === "To Do"
                             ? "bg-red-200 text-red-800 dark:bg-red-300/20 dark:text-red-300"
-                            : task.status === "Doing"
+                            : task.status === "Processing"
                             ? "bg-amber-100 text-amber-800 dark:bg-amber-200/20 dark:text-amber-300"
-                            : task.status === "Done"?
-                            "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
+                            : task.status === "Done"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
                             : "bg-muted text-muted-foreground"
                     }`}
                 >
@@ -133,7 +131,7 @@ const BoardColumn = ({
     tasks,
     isOverlay,
 }: {
-    status: "Untagged" | "To Do" | "Doing" | "Done";
+    status: "Untagged" | "To Do" | "Processing" | "Done";
     tasks: Task[];
     isOverlay?: boolean;
 }) => {
@@ -190,7 +188,12 @@ const DroppableColumnZone = ({
 const KanbanBoard = () => {
     const [tasks, setTasks] = useState(initialTasks);
     const [activeTask, setActiveTask] = useState<Task | null>(null);
-    const columns: ("Untagged" | "To Do" | "Doing" | "Done")[] = ["Untagged", "To Do", "Doing", "Done"];
+    const columns: ("Untagged" | "To Do" | "Processing" | "Done")[] = [
+        "Untagged",
+        "To Do",
+        "Processing",
+        "Done",
+    ];
     const columnsId = useMemo(
         () => columns.map((col) => col.replace(/\s/g, "")),
         []
@@ -315,7 +318,7 @@ const KanbanBoard = () => {
 
         // Thả task vào cột
         const isOverAColumn = columnsId.includes(over.id);
-        
+
         if (isActiveATask && isOverAColumn) {
             setTasks((prevTasks) => {
                 const activeIndex = prevTasks.findIndex(

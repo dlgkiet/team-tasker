@@ -165,7 +165,9 @@ const ProjectDetail = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="To Do">To Do</SelectItem>
-                                    <SelectItem value="Doing">Doing</SelectItem>
+                                    <SelectItem value="Processing">
+                                        Processing
+                                    </SelectItem>
                                     <SelectItem value="Done">Done</SelectItem>
                                 </SelectContent>
                             </Select>
