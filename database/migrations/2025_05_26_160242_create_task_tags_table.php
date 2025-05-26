@@ -9,22 +9,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('tasks', function (Blueprint $table) {
+        Schema::create('task_tags', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->enum('status', ['U', 'T', 'I', 'R', 'D']);
-            $table->dateTime('due_date')->nullable();
+            $table->foreignId('task_id')->constrained()->onDelete('cascade');
+            $table->foreignId('tag_id')->constrained()->onDelete('cascade');
             $table->timestamps();
         });
     }
+
 
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('tasks');
+        Schema::dropIfExists('task_tags');
     }
 };

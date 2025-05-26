@@ -1,8 +1,13 @@
-import React, { useState, useMemo } from "react";
-import { Card, CardContent } from "../../components/ui/card";
+"use client";
+
+import type React from "react";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
     DndContext,
-    closestCorners,
     useSensor,
     useSensors,
     MouseSensor,
@@ -20,39 +25,118 @@ import {
     arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ScrollArea } from "../../components/ui/scroll-area";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { createPortal } from "react-dom";
+import {
+    Calendar,
+    Clock,
+    MoreHorizontal,
+    Plus,
+    Target,
+    Users,
+    CheckCircle2,
+    Timer,
+    Circle,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Task {
     id: number;
     name: string;
+    description?: string;
     members: string[];
     status: "Untagged" | "To Do" | "Processing" | "Done";
+    priority: "low" | "medium" | "high" | "urgent";
     dueDate: string;
+    progress?: number;
+    tags?: string[];
+    estimatedHours?: number;
 }
 
 const initialTasks: Task[] = [
     {
         id: 1,
         name: "User Acceptance Testing",
+        description: "Conduct comprehensive UAT for the new features",
         members: ["RA", "C"],
         status: "To Do",
+        priority: "high",
         dueDate: "2025-03-03T09:00:00",
+        progress: 0,
+        tags: ["testing", "frontend"],
+        estimatedHours: 16,
     },
     {
         id: 2,
-        name: "Unit Testing",
+        name: "Unit Testing Implementation",
+        description: "Write and execute unit tests for core modules",
         members: ["RC", "H"],
         status: "Processing",
+        priority: "medium",
         dueDate: "2025-09-13T16:00:00",
+        progress: 65,
+        tags: ["testing", "backend"],
+        estimatedHours: 24,
     },
     {
         id: 3,
         name: "API Integration",
+        description: "Integrate third-party APIs and handle authentication",
         members: ["T"],
         status: "Done",
+        priority: "urgent",
         dueDate: "2025-04-22T22:00:00",
+        progress: 100,
+        tags: ["api", "backend"],
+        estimatedHours: 12,
     },
+    {
+        id: 4,
+        name: "Database Schema Design",
+        description: "Design and optimize database schema for performance",
+        members: ["N", "D"],
+        status: "Untagged",
+        priority: "medium",
+        dueDate: "2025-06-15T14:00:00",
+        progress: 0,
+        tags: ["database", "design"],
+        estimatedHours: 20,
+    },
+    {
+        id: 5,
+        name: "UI/UX Improvements",
+        description: "Enhance user interface based on feedback",
+        members: ["RA", "C", "H"],
+        status: "Processing",
+        priority: "low",
+        dueDate: "2025-07-01T12:00:00",
+        progress: 30,
+        tags: ["ui", "design"],
+        estimatedHours: 32,
+    },
+];
+
+// Mock users data
+const mockUsers = [
+    {
+        id: "RA",
+        name: "Robert Anderson",
+        avatar: "/placeholder.svg?height=32&width=32",
+    },
+    {
+        id: "C",
+        name: "Catherine",
+        avatar: "/placeholder.svg?height=32&width=32",
+    },
+    {
+        id: "RC",
+        name: "Richard Chen",
+        avatar: "/placeholder.svg?height=32&width=32",
+    },
+    { id: "H", name: "Helen", avatar: "/placeholder.svg?height=32&width=32" },
+    { id: "T", name: "Thomas", avatar: "/placeholder.svg?height=32&width=32" },
+    { id: "N", name: "Nancy", avatar: "/placeholder.svg?height=32&width=32" },
+    { id: "D", name: "David", avatar: "/placeholder.svg?height=32&width=32" },
 ];
 
 // Component cho mỗi task có thể kéo thả
@@ -82,32 +166,90 @@ const SortableTask = ({
         zIndex: isDragging ? 100 : 0,
     };
 
+    // Calculate deadline info
+    const formatDeadlineInfo = (dueDate: string) => {
+        const due = new Date(dueDate);
+        const now = new Date();
+        const diffMs = due.getTime() - now.getTime();
+        const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+        let isOverdue = false;
+        let urgency: "low" | "medium" | "high" = "low";
+
+        if (diffMs < 0) {
+            isOverdue = true;
+            urgency = "high";
+        } else if (diffDays <= 3) {
+            urgency = "high";
+        } else if (diffDays <= 7) {
+            urgency = "medium";
+        }
+
+        return {
+            deadline: due.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+            }),
+            isOverdue,
+            urgency,
+            diffDays: Math.abs(diffDays),
+        };
+    };
+
+    const deadlineInfo = formatDeadlineInfo(task.dueDate);
+
+    const getPriorityColor = (priority: string) => {
+        switch (priority) {
+            case "urgent":
+                return "bg-red-100 text-red-800 border-red-200";
+            case "high":
+                return "bg-orange-100 text-orange-800 border-orange-200";
+            case "medium":
+                return "bg-blue-100 text-blue-800 border-blue-200";
+            case "low":
+                return "bg-green-100 text-green-800 border-green-200";
+            default:
+                return "bg-gray-100 text-gray-800 border-gray-200";
+        }
+    };
+
     return (
         <Card
             ref={setNodeRef}
             style={style}
             {...attributes}
             {...listeners}
-            className={`rounded-xl shadow-md bg-background hover:shadow-lg transition-shadow cursor-grab active:cursor-grabbing ${
-                isOverlay ? "ring-2 ring-white" : ""
-            }`}
+            className={cn(
+                "group hover:shadow-lg transition-all duration-300 cursor-grab active:cursor-grabbing border-0 shadow-md",
+                isOverlay && "ring-2 ring-primary shadow-2xl",
+                isDragging && "shadow-2xl"
+            )}
         >
-            <CardContent className="p-4 space-y-3">
-                <h3 className="text-lg font-semibold">{task.name}</h3>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
-                    Due: {new Date(task.dueDate).toLocaleDateString()}
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                        <h3 className="font-semibold text-sm leading-tight group-hover:text-primary transition-colors">
+                            {task.name}
+                        </h3>
+                        {task.description && (
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                {task.description}
+                            </p>
+                        )}
+                    </div>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                        <MoreHorizontal className="h-3 w-3" />
+                    </Button>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                    {task.members.map((m, idx) => (
-                        <span
-                            key={idx}
-                            className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full text-xs font-medium dark:bg-indigo-900 dark:text-indigo-200"
-                        >
-                            {m}
-                        </span>
-                    ))}
-                </div>
-                <span
+            </CardHeader>
+            <CardContent className="pt-0 space-y-3">
+                {/* Priority and Tags */}
+                <div className="flex items-center gap-2 flex-wrap">
+                    <span
                     className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${
                         task.status === "To Do"
                             ? "bg-red-200 text-red-800 dark:bg-red-300/20 dark:text-red-300"
@@ -120,6 +262,94 @@ const SortableTask = ({
                 >
                     {task.status}
                 </span>
+                    {task.tags?.slice(0, 2).map((tag) => (
+                        <Badge
+                            key={tag}
+                            variant="secondary"
+                            className="text-xs h-5"
+                        >
+                            {tag}
+                        </Badge>
+                    ))}
+                    {task.tags && task.tags.length > 2 && (
+                        <Badge variant="secondary" className="text-xs h-5">
+                            +{task.tags.length - 2}
+                        </Badge>
+                    )}
+                </div>
+
+                {/* Team Members */}
+                <div className="flex items-center justify-between">
+                    <div className="flex -space-x-1.5">
+                        {task.members.slice(0, 3).map((memberId) => {
+                            const member = mockUsers.find(
+                                (u) => u.id === memberId
+                            );
+                            return (
+                                <Avatar
+                                    key={memberId}
+                                    className="h-6 w-6 border-2 border-background"
+                                >
+                                    <AvatarImage
+                                        src={
+                                            member?.avatar || "/placeholder.svg"
+                                        }
+                                        alt={member?.name}
+                                    />
+                                    <AvatarFallback className="text-xs font-medium">
+                                        {memberId}
+                                    </AvatarFallback>
+                                </Avatar>
+                            );
+                        })}
+                        {task.members.length > 3 && (
+                            <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                                +{task.members.length - 3}
+                            </div>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="h-3 w-3" />
+                        <span>{task.members.length}</span>
+                    </div>
+                </div>
+
+                {/* Due Date and Time */}
+                <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span>{deadlineInfo.deadline}</span>
+                    </div>
+                    <div
+                        className={cn(
+                            "flex items-center gap-1",
+                            deadlineInfo.isOverdue
+                                ? "text-red-600"
+                                : deadlineInfo.urgency === "high"
+                                ? "text-orange-600"
+                                : deadlineInfo.urgency === "medium"
+                                ? "text-yellow-600"
+                                : "text-muted-foreground"
+                        )}
+                    >
+                        <Clock className="h-3 w-3" />
+                        <span>
+                            {deadlineInfo.isOverdue
+                                ? "Overdue"
+                                : deadlineInfo.diffDays === 0
+                                ? "Today"
+                                : `${deadlineInfo.diffDays}d left`}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Estimated Hours */}
+                {task.estimatedHours && (
+                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Timer className="h-3 w-3" />
+                        <span>{task.estimatedHours}h estimated</span>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -137,32 +367,121 @@ const BoardColumn = ({
 }) => {
     const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
 
+    const getColumnConfig = (status: string) => {
+        switch (status) {
+            case "Untagged":
+                return {
+                    title: "Untagged",
+                    icon: Circle,
+                    color: "bg-gray-50 border-gray-200",
+                    headerColor: "text-gray-700",
+                    count: tasks.length,
+                };
+            case "To Do":
+                return {
+                    title: "To Do",
+                    icon: Target,
+                    color: "bg-blue-50 border-blue-200",
+                    headerColor: "text-blue-700",
+                    count: tasks.length,
+                };
+            case "Processing":
+                return {
+                    title: "In Progress",
+                    icon: Timer,
+                    color: "bg-yellow-50 border-yellow-200",
+                    headerColor: "text-yellow-700",
+                    count: tasks.length,
+                };
+            case "Done":
+                return {
+                    title: "Completed",
+                    icon: CheckCircle2,
+                    color: "bg-green-50 border-green-200",
+                    headerColor: "text-green-700",
+                    count: tasks.length,
+                };
+            default:
+                return {
+                    title: status,
+                    icon: Circle,
+                    color: "bg-gray-50 border-gray-200",
+                    headerColor: "text-gray-700",
+                    count: tasks.length,
+                };
+        }
+    };
+
+    const config = getColumnConfig(status);
+    const IconComponent = config.icon;
+
     return (
         <div
-            className={`bg-white dark:bg-[#2F2F2F] rounded-xl p-4 shadow-sm w-full max-w-full flex-shrink-0 ${
-                isOverlay ? "ring-2 ring-white" : ""
-            }`}
+            className={cn(
+                "rounded-xl border-2 border-dashed transition-all duration-300 flex flex-col h-full",
+                config.color,
+                isOverlay && "ring-2 ring-primary"
+            )}
         >
-            <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white flex items-center justify-between">
-                {status}
-                <span className="text-sm text-gray-500 dark:text-gray-400">
-                    {tasks.length}
-                </span>
-            </h2>
-            <ScrollArea className="h-[500px]">
-                <DroppableColumnZone id={status.replace(/\s/g, "")}>
-                    <SortableContext
-                        items={tasksIds}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        <div className="space-y-4 p-2 min-h-[60px]">
-                            {tasks.map((task) => (
-                                <SortableTask key={task.id} task={task} />
-                            ))}
-                        </div>
-                    </SortableContext>
-                </DroppableColumnZone>
-            </ScrollArea>
+            {/* Column Header */}
+            <div className="p-4 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                        <IconComponent
+                            className={cn("h-5 w-5", config.headerColor)}
+                        />
+                        <h2
+                            className={cn(
+                                "font-semibold text-lg",
+                                config.headerColor
+                            )}
+                        >
+                            {config.title}
+                        </h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                            {config.count}
+                        </Badge>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                        >
+                            <Plus className="h-3 w-3" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Tasks Container */}
+            <div className="flex-1 px-4 pb-4">
+                <ScrollArea className="h-[calc(100vh-280px)]">
+                    <DroppableColumnZone id={status.replace(/\s/g, "")}>
+                        <SortableContext
+                            items={tasksIds}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-3 min-h-[100px] pb-4">
+                                {tasks.map((task) => (
+                                    <SortableTask key={task.id} task={task} />
+                                ))}
+                                {tasks.length === 0 && (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                                        <IconComponent className="h-8 w-8 text-muted-foreground/50 mb-2" />
+                                        <p className="text-sm text-muted-foreground">
+                                            No tasks yet
+                                        </p>
+                                        <p className="text-xs text-muted-foreground/70">
+                                            Drag tasks here or create new ones
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </SortableContext>
+                    </DroppableColumnZone>
+                </ScrollArea>
+            </div>
         </div>
     );
 };
@@ -174,12 +493,18 @@ const DroppableColumnZone = ({
     id: string;
     children: React.ReactNode;
 }) => {
-    const { setNodeRef } = useDroppable({
+    const { setNodeRef, isOver } = useDroppable({
         id,
     });
 
     return (
-        <div ref={setNodeRef} className="min-h-[20px]">
+        <div
+            ref={setNodeRef}
+            className={cn(
+                "min-h-[100px] transition-all duration-200 rounded-lg",
+                isOver && "bg-primary/5 ring-2 ring-primary/20"
+            )}
+        >
             {children}
         </div>
     );
@@ -336,35 +661,88 @@ const KanbanBoard = () => {
         }
     };
 
+    // Calculate board stats
+    const stats = {
+        total: tasks.length,
+        completed: tasks.filter((t) => t.status === "Done").length,
+        inProgress: tasks.filter((t) => t.status === "Processing").length,
+        overdue: tasks.filter((t) => {
+            const due = new Date(t.dueDate);
+            const now = new Date();
+            return due < now && t.status !== "Done";
+        }).length,
+    };
+
     return (
-        <DndContext
-            sensors={sensors}
-            collisionDetection={rectIntersection}
-            onDragStart={onDragStart}
-            onDragOver={onDragOver}
-            onDragEnd={onDragEnd}
-        >
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 min-h-screen">
-                <SortableContext items={columnsId}>
-                    {columns.map((col) => (
-                        <BoardColumn
-                            key={col}
-                            status={col}
-                            tasks={tasks.filter((task) => task.status === col)}
-                        />
-                    ))}
-                </SortableContext>
+        <div className="space-y-6">
+            {/* Board Header with Stats */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold">Project Board</h1>
+                    <p className="text-muted-foreground">
+                        Manage your tasks with drag and drop
+                    </p>
+                </div>
+                <div className="flex gap-4 text-sm">
+                    <div className="text-center">
+                        <div className="font-semibold text-lg">
+                            {stats.total}
+                        </div>
+                        <div className="text-muted-foreground">Total</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="font-semibold text-lg text-green-600">
+                            {stats.completed}
+                        </div>
+                        <div className="text-muted-foreground">Done</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="font-semibold text-lg text-yellow-600">
+                            {stats.inProgress}
+                        </div>
+                        <div className="text-muted-foreground">In Progress</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="font-semibold text-lg text-red-600">
+                            {stats.overdue}
+                        </div>
+                        <div className="text-muted-foreground">Overdue</div>
+                    </div>
+                </div>
             </div>
-            {"document" in window &&
-                createPortal(
-                    <DragOverlay>
-                        {activeTask && (
-                            <SortableTask task={activeTask} isOverlay />
-                        )}
-                    </DragOverlay>,
-                    document.body
-                )}
-        </DndContext>
+
+            {/* Kanban Board */}
+            <DndContext
+                sensors={sensors}
+                collisionDetection={rectIntersection}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragEnd={onDragEnd}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[600px]">
+                    <SortableContext items={columnsId}>
+                        {columns.map((col) => (
+                            <BoardColumn
+                                key={col}
+                                status={col}
+                                tasks={tasks.filter(
+                                    (task) => task.status === col
+                                )}
+                            />
+                        ))}
+                    </SortableContext>
+                </div>
+                {"document" in window &&
+                    createPortal(
+                        <DragOverlay>
+                            {activeTask && (
+                                <SortableTask task={activeTask} isOverlay />
+                            )}
+                        </DragOverlay>,
+                        document.body
+                    )}
+            </DndContext>
+        </div>
     );
 };
 

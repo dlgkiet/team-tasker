@@ -17,6 +17,7 @@ import { useAuthStore } from "../../../stores/auth-store";
 
 const navLinks = [
     { name: "Homepage", path: "/" },
+    { name: "Teams", path: "/teams" },
     { name: "Projects", path: "/projects" },
 ];
 

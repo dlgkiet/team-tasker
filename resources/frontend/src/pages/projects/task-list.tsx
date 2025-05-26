@@ -1,87 +1,216 @@
-import React, { useState, useEffect } from "react";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import type React from "react";
+import { useState, useMemo } from "react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
+    DialogDescription,
     DialogFooter,
+    DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Trash2, Check, Pencil, Clock } from "lucide-react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
     Select,
-    SelectTrigger,
     SelectContent,
     SelectItem,
+    SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+    AlertCircle,
+    Calendar,
+    Check,
+    CheckCircle2,
+    Clock,
+    Edit,
+    Filter,
+    Grid3X3,
+    List,
+    MoreHorizontal,
+    Plus,
+    Search,
+    Star,
+    Trash2,
+    Users,
+    X,
+    Flag,
+    Target,
+    Timer,
+    Pencil,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
-// Define interfaces for our types
+// Enhanced interfaces
 interface Task {
     id: number;
     name: string;
+    description?: string;
     members: string[];
-    status: "Untagged" | "To Do" | "Processing" | "Done";
+    status: "untagged" | "todo" | "in_progress" | "review" | "done";
     dueDate: string;
+    createdAt: string;
+    tags: string[];
+    progress: number;
+    isStarred: boolean;
+    estimatedHours?: number;
+    actualHours?: number;
 }
 
 interface DialogState {
     open: boolean;
-    type: "delete" | "check" | "edit" | "";
+    type: "delete" | "complete" | "edit" | "create" | "";
     id: number | null;
 }
 
 interface EditTaskState {
     id: number | null;
     name: string;
-    members: string;
-    status: "Untagged" | "To Do" | "Processing" | "Done";
+    description: string;
+    members: string[];
+    status: Task["status"];
     dueDate: string;
+    tags: string[];
+    estimatedHours: number;
 }
 
 const TaskList: React.FC = () => {
-    const mockUsers = ["RA", "C", "RC", "H", "T", "N", "D"];
+    const mockUsers = [
+        {
+            id: "RA",
+            name: "Robert Anderson",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "C",
+            name: "Catherine",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "RC",
+            name: "Richard Chen",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "H",
+            name: "Helen",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "T",
+            name: "Thomas",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "N",
+            name: "Nancy",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+        {
+            id: "D",
+            name: "David",
+            avatar: "/placeholder.svg?height=32&width=32",
+        },
+    ];
+
     const initialTasks: Task[] = [
         {
             id: 1,
             name: "User Acceptance Testing",
+            description: "Conduct comprehensive UAT for the new features",
             members: ["RA", "C"],
-            status: "To Do",
+            status: "todo",
             dueDate: "2025-03-03T09:00:00",
+            createdAt: "2025-01-15T10:00:00",
+            tags: ["testing", "frontend"],
+            progress: 0,
+            isStarred: true,
+            estimatedHours: 16,
+            actualHours: 0,
         },
         {
             id: 2,
-            name: "Unit Testing",
+            name: "Unit Testing Implementation",
+            description: "Write and execute unit tests for core modules",
             members: ["RC", "H"],
-            status: "Processing",
+            status: "in_progress",
             dueDate: "2025-09-13T16:00:00",
+            createdAt: "2025-01-10T10:00:00",
+            tags: ["testing", "backend"],
+            progress: 65,
+            isStarred: false,
+            estimatedHours: 24,
+            actualHours: 15,
         },
         {
             id: 3,
             name: "API Integration",
+            description: "Integrate third-party APIs and handle authentication",
             members: ["T"],
-            status: "Done",
+            status: "done",
             dueDate: "2025-04-22T22:00:00",
+            createdAt: "2025-01-05T10:00:00",
+            tags: ["api", "backend"],
+            progress: 100,
+            isStarred: false,
+            estimatedHours: 12,
+            actualHours: 14,
         },
         {
             id: 4,
-            name: "Database Design",
+            name: "Database Schema Design",
+            description: "Design and optimize database schema for performance",
             members: ["N", "D"],
-            status: "Untagged",
+            status: "review",
             dueDate: "2025-06-15T14:00:00",
+            createdAt: "2025-01-20T10:00:00",
+            tags: ["database", "design"],
+            progress: 90,
+            isStarred: true,
+            estimatedHours: 20,
+            actualHours: 18,
+        },
+        {
+            id: 5,
+            name: "UI/UX Improvements",
+            description: "Enhance user interface based on feedback",
+            members: ["RA", "C", "H"],
+            status: "untagged",
+            dueDate: "2025-07-01T12:00:00",
+            createdAt: "2025-01-25T10:00:00",
+            tags: ["ui", "design"],
+            progress: 0,
+            isStarred: false,
+            estimatedHours: 32,
+            actualHours: 0,
         },
     ];
 
     const [tasks, setTasks] = useState<Task[]>(initialTasks);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [statusFilter, setStatusFilter] = useState<string>("all");
+    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [dialog, setDialog] = useState<DialogState>({
         open: false,
         type: "",
@@ -90,26 +219,37 @@ const TaskList: React.FC = () => {
     const [editTask, setEditTask] = useState<EditTaskState>({
         id: null,
         name: "",
-        members: "",
-        status: "Untagged",
+        description: "",
+        members: [],
+        status: "todo",
         dueDate: "",
+        tags: [],
+        estimatedHours: 0,
     });
 
-    // Calculate remaining time for due dates
-    const formatDeadlineInfo = (
-        dueDate: string
-    ): { deadline: string; remaining: string; isOverdue: boolean } => {
+    // Filter and search tasks
+    const filteredTasks = useMemo(() => {
+        return tasks.filter((task) => {
+            const matchesSearch =
+                task.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                task.description
+                    ?.toLowerCase()
+                    .includes(searchQuery.toLowerCase()) ||
+                task.tags.some((tag) =>
+                    tag.toLowerCase().includes(searchQuery.toLowerCase())
+                );
+
+            const matchesStatus =
+                statusFilter === "all" || task.status === statusFilter;
+
+            return matchesSearch && matchesStatus;
+        });
+    }, [tasks, searchQuery, statusFilter]);
+
+    // Calculate deadline info
+    const formatDeadlineInfo = (dueDate: string) => {
         const due = new Date(dueDate);
         const now = new Date();
-        const deadline = due.toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
-        });
-
         const diffMs = due.getTime() - now.getTime();
         const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
         const diffHours = Math.floor(
@@ -118,60 +258,129 @@ const TaskList: React.FC = () => {
 
         let remaining: string;
         let isOverdue = false;
+        let urgency: "low" | "medium" | "high" = "low";
 
         if (diffMs < 0) {
             remaining = "Overdue";
             isOverdue = true;
-        } else if (diffDays > 0) {
-            remaining = `${diffDays} day${diffDays > 1 ? "s" : ""} left`;
+            urgency = "high";
+        } else if (diffDays === 0) {
+            remaining = `${diffHours}h left`;
+            urgency = "high";
+        } else if (diffDays <= 3) {
+            remaining = `${diffDays}d left`;
+            urgency = "medium";
         } else {
-            remaining = `${diffHours} hour${diffHours > 1 ? "s" : ""} left`;
+            remaining = `${diffDays}d left`;
+            urgency = "low";
         }
 
-        return { deadline, remaining, isOverdue };
+        return {
+            deadline: due.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }),
+            remaining,
+            isOverdue,
+            urgency,
+        };
     };
 
-    const toggleSelectAll = (): void => {
-        if (selectedIds.length === tasks.length) {
+    // Status configurations
+    const statusConfig = {
+        untagged: {
+            label: "Untagged",
+            color: "bg-gray-100 text-gray-800 border-gray-200",
+            icon: Target,
+        },
+        todo: {
+            label: "To Do",
+            color: "bg-blue-100 text-blue-800 border-blue-200",
+            icon: Clock,
+        },
+        in_progress: {
+            label: "In Progress",
+            color: "bg-yellow-100 text-yellow-800 border-yellow-200",
+            icon: Timer,
+        },
+        review: {
+            label: "Review",
+            color: "bg-purple-100 text-purple-800 border-purple-200",
+            icon: Search,
+        },
+        done: {
+            label: "Done",
+            color: "bg-green-100 text-green-800 border-green-200",
+            icon: CheckCircle2,
+        },
+    };
+
+    // Handlers
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filteredTasks.length) {
             setSelectedIds([]);
         } else {
-            setSelectedIds(tasks.map((t) => t.id));
+            setSelectedIds(filteredTasks.map((t) => t.id));
         }
     };
 
-    const handleDelete = (id: number): void => {
-        setDialog({ open: true, type: "delete", id });
+    const toggleTaskSelection = (taskId: number) => {
+        setSelectedIds((prev) =>
+            prev.includes(taskId)
+                ? prev.filter((id) => id !== taskId)
+                : [...prev, taskId]
+        );
     };
 
-    const handleCheckToggle = (id: number): void => {
-        setDialog({ open: true, type: "check", id });
-    };
-
-    const handleEdit = (task: Task): void => {
+    const handleEdit = (task: Task) => {
         setEditTask({
             id: task.id,
             name: task.name,
-            members: task.members.join(", "),
+            description: task.description || "",
+            members: task.members,
             status: task.status,
             dueDate: task.dueDate,
+            tags: task.tags,
+            estimatedHours: task.estimatedHours || 0,
         });
         setDialog({ open: true, type: "edit", id: task.id });
     };
 
-    const confirmAction = (): void => {
+    const handleDelete = (taskId: number) => {
+        setDialog({ open: true, type: "delete", id: taskId });
+    };
+
+    const handleComplete = (taskId: number) => {
+        setDialog({ open: true, type: "complete", id: taskId });
+    };
+
+    const toggleStar = (taskId: number) => {
+        setTasks((prev) =>
+            prev.map((t) =>
+                t.id === taskId ? { ...t, isStarred: !t.isStarred } : t
+            )
+        );
+    };
+
+    const confirmAction = () => {
         if (dialog.type === "delete" && dialog.id) {
             setTasks((prev) => prev.filter((t) => t.id !== dialog.id));
-            setSelectedIds((prev) => prev.filter((i) => i !== dialog.id));
+            setSelectedIds((prev) => prev.filter((id) => id !== dialog.id));
             toast.success("Task deleted successfully!");
         }
-        if (dialog.type === "check" && dialog.id) {
+
+        if (dialog.type === "complete" && dialog.id) {
             setTasks((prev) =>
                 prev.map((t) =>
-                    t.id === dialog.id ? { ...t, status: "Done" } : t
+                    t.id === dialog.id
+                        ? { ...t, status: "done", progress: 100 }
+                        : t
                 )
             );
             toast.success("Task completed!");
         }
+
         if (dialog.type === "edit" && dialog.id) {
             setTasks((prev) =>
                 prev.map((t) =>
@@ -179,274 +388,727 @@ const TaskList: React.FC = () => {
                         ? {
                               ...t,
                               name: editTask.name,
-                              members: editTask.members
-                                  .split(",")
-                                  .map((m) => m.trim()),
+                              description: editTask.description,
+                              members: editTask.members,
                               status: editTask.status,
                               dueDate: editTask.dueDate,
+                              tags: editTask.tags,
+                              estimatedHours: editTask.estimatedHours,
                           }
                         : t
                 )
             );
             toast.success("Task updated successfully!");
         }
+
         setDialog({ open: false, type: "", id: null });
     };
 
-    const getStatusVariant = (
-        status: "Untagged" | "To Do" | "Processing" | "Done"
-    ) => {
-        switch (status) {
-            case "Untagged":
-                return "secondary";
-            case "To Do":
-                return "outline";
-            case "Processing":
-                return "default";
-            case "Done":
-                return "default";
-            default:
-                return "secondary";
-        }
+    const updateTaskStatus = (taskId: number, newStatus: Task["status"]) => {
+        setTasks((prev) =>
+            prev.map((t) =>
+                t.id === taskId
+                    ? {
+                          ...t,
+                          status: newStatus,
+                          progress:
+                              newStatus === "done"
+                                  ? 100
+                                  : newStatus === "in_progress"
+                                  ? Math.max(t.progress, 10)
+                                  : t.progress,
+                      }
+                    : t
+            )
+        );
     };
 
-    const getStatusColor = (
-        status: "Untagged" | "To Do" | "Processing" | "Done"
-    ): string => {
-        switch (status) {
-            case "Untagged":
-                return "bg-muted text-muted-foreground border-muted";
-            case "To Do":
-                return "bg-red-200 text-red-800 border-red-300 dark:bg-red-300/20 dark:text-red-300 dark:border-red-300";
-            case "Processing":
-                return "bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-200/20 dark:text-amber-300 dark:border-amber-200";
-            case "Done":
-                return "bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-800";
-            default:
-                return "bg-muted text-muted-foreground border-muted";
-        }
+    // Calculate stats
+    const stats = {
+        total: tasks.length,
+        completed: tasks.filter((t) => t.status === "done").length,
+        inProgress: tasks.filter((t) => t.status === "in_progress").length,
+        overdue: tasks.filter(
+            (t) =>
+                formatDeadlineInfo(t.dueDate).isOverdue && t.status !== "done"
+        ).length,
     };
 
     return (
-        <Card className="w-full bg-background py-0">
-            <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full">
-                        <thead>
-                            <tr className="border-b border-border bg-muted/50">
-                                <th className="text-left p-4 w-12">
-                                    <Checkbox
-                                        checked={
-                                            selectedIds.length ===
-                                                tasks.length && tasks.length > 0
-                                        }
-                                        onCheckedChange={toggleSelectAll}
-                                    />
-                                </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">
-                                    Name
-                                </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">
-                                    Members
-                                </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">
-                                    Status
-                                </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">
-                                    Due Date
-                                </th>
-                                <th className="text-left p-4 font-medium text-muted-foreground">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {tasks.map((task) => (
-                                <tr
-                                    key={task.id}
-                                    className="border-b border-border hover:bg-muted/30 transition-colors"
+        <div className="space-y-6">
+            {/* Header with Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Total Tasks
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {stats.total}
+                                </p>
+                            </div>
+                            <Target className="h-8 w-8 text-blue-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Completed
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {stats.completed}
+                                </p>
+                            </div>
+                            <CheckCircle2 className="h-8 w-8 text-green-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    In Progress
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {stats.inProgress}
+                                </p>
+                            </div>
+                            <Timer className="h-8 w-8 text-yellow-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                    Overdue
+                                </p>
+                                <p className="text-2xl font-bold">
+                                    {stats.overdue}
+                                </p>
+                            </div>
+                            <AlertCircle className="h-8 w-8 text-red-500" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Filters and Controls */}
+            <Card>
+                <CardContent className="p-6">
+                    <div className="flex flex-col lg:flex-row gap-4">
+                        {/* Search */}
+                        <div className="flex-1">
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                                <Input
+                                    placeholder="Search tasks, descriptions, or tags..."
+                                    value={searchQuery}
+                                    onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    className="pl-10 pr-10"
+                                />
+                                {searchQuery && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setSearchQuery("")}
+                                        className="absolute right-1 top-1/2 transform -translate-y-1/2 h-6 w-6 p-0"
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Filters */}
+                        <div className="flex flex-wrap gap-2">
+                            <Select
+                                value={statusFilter}
+                                onValueChange={setStatusFilter}
+                            >
+                                <SelectTrigger className="w-[130px]">
+                                    <Filter className="h-4 w-4 mr-2" />
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">
+                                        All Status
+                                    </SelectItem>
+                                    <SelectItem value="untagged">
+                                        Untagged
+                                    </SelectItem>
+                                    <SelectItem value="todo">To Do</SelectItem>
+                                    <SelectItem value="in_progress">
+                                        In Progress
+                                    </SelectItem>
+                                    <SelectItem value="review">
+                                        Review
+                                    </SelectItem>
+                                    <SelectItem value="done">Done</SelectItem>
+                                </SelectContent>
+                            </Select>
+
+                            {/* View Mode Toggle */}
+                            <div className="flex border rounded-md">
+                                <Button
+                                    variant={
+                                        viewMode === "grid"
+                                            ? "default"
+                                            : "ghost"
+                                    }
+                                    size="sm"
+                                    onClick={() => setViewMode("grid")}
+                                    className="rounded-r-none"
                                 >
-                                    <td className="p-4">
-                                        <Checkbox
-                                            checked={selectedIds.includes(
-                                                task.id
-                                            )}
-                                            onCheckedChange={(
-                                                checked:
-                                                    | boolean
-                                                    | "indeterminate"
-                                            ) =>
-                                                setSelectedIds((prev) =>
-                                                    checked === true
-                                                        ? [...prev, task.id]
-                                                        : prev.filter(
-                                                              (id) =>
-                                                                  id !== task.id
-                                                          )
-                                                )
-                                            }
-                                        />
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="font-medium text-foreground">
-                                            {task.name}
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex -space-x-2">
-                                            {task.members.map((m, i) => (
-                                                <Avatar
-                                                    key={i}
-                                                    className="w-7 h-7 border-2 border-background"
-                                                >
-                                                    <AvatarFallback className="text-xs font-medium">
-                                                        {m}
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                            ))}
-                                        </div>
-                                    </td>
-                                    <td className="p-4">
-                                        <Select
-                                            value={task.status}
-                                            onValueChange={(
-                                                val:
-                                                    | "Untagged"
-                                                    | "To Do"
-                                                    | "Processing"
-                                                    | "Done"
-                                            ) =>
-                                                setTasks((prev) =>
-                                                    prev.map((t) =>
-                                                        t.id === task.id
-                                                            ? {
-                                                                  ...t,
-                                                                  status: val,
-                                                              }
-                                                            : t
-                                                    )
-                                                )
-                                            }
-                                        >
-                                            <SelectTrigger
-                                                className={cn(
-                                                    "w-32 h-8 text-xs",
-                                                    getStatusColor(task.status)
-                                                )}
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Untagged">
-                                                    Untagged
-                                                </SelectItem>
-                                                <SelectItem value="To Do">
-                                                    To Do
-                                                </SelectItem>
-                                                <SelectItem value="Processing">
-                                                    Processing
-                                                </SelectItem>
-                                                <SelectItem value="Done">
-                                                    Done
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </td>
-                                    <td className="p-4">
-                                        {(() => {
-                                            const {
-                                                deadline,
-                                                remaining,
-                                                isOverdue,
-                                            } = formatDeadlineInfo(
-                                                task.dueDate
-                                            );
-                                            return (
-                                                <div className="space-y-1">
-                                                    <div className="text-sm font-medium text-foreground">
-                                                        {deadline}
-                                                    </div>
-                                                    <div
-                                                        className={cn(
-                                                            "text-xs flex items-center gap-1",
-                                                            isOverdue
-                                                                ? "text-destructive"
-                                                                : "text-muted-foreground"
+                                    <Grid3X3 className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant={
+                                        viewMode === "list"
+                                            ? "default"
+                                            : "ghost"
+                                    }
+                                    size="sm"
+                                    onClick={() => setViewMode("list")}
+                                    className="rounded-l-none"
+                                >
+                                    <List className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bulk Actions */}
+                    {selectedIds.length > 0 && (
+                        <div className="mt-4 p-3 bg-muted rounded-lg flex items-center justify-between">
+                            <span className="text-sm font-medium">
+                                {selectedIds.length} tasks selected
+                            </span>
+                            <div className="flex gap-2">
+                                <Button size="sm" variant="outline">
+                                    Bulk Edit
+                                </Button>
+                                <Button size="sm" variant="outline">
+                                    Mark Complete
+                                </Button>
+                                <Button size="sm" variant="destructive">
+                                    Delete Selected
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Tasks Display */}
+            {filteredTasks.length > 0 ? (
+                <>
+                    {/* Select All */}
+                    <div className="flex items-center gap-2">
+                        <Checkbox
+                            checked={
+                                selectedIds.length === filteredTasks.length &&
+                                filteredTasks.length > 0
+                            }
+                            onCheckedChange={toggleSelectAll}
+                        />
+                        <span className="text-sm text-muted-foreground">
+                            Select all ({filteredTasks.length} tasks)
+                        </span>
+                    </div>
+
+                    {viewMode === "grid" ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {filteredTasks.map((task) => {
+                                const deadlineInfo = formatDeadlineInfo(
+                                    task.dueDate
+                                );
+                                const StatusIcon =
+                                    statusConfig[task.status].icon;
+
+                                return (
+                                    <Card
+                                        key={task.id}
+                                        className={cn(
+                                            "group hover:shadow-lg transition-all duration-300 cursor-pointer",
+                                            selectedIds.includes(task.id) &&
+                                                "ring-2 ring-primary"
+                                        )}
+                                    >
+                                        <CardHeader className="pb-3">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-start gap-3 flex-1">
+                                                    <Checkbox
+                                                        checked={selectedIds.includes(
+                                                            task.id
                                                         )}
-                                                    >
-                                                        <Clock className="w-3 h-3" />
-                                                        {remaining}
+                                                        onCheckedChange={() =>
+                                                            toggleTaskSelection(
+                                                                task.id
+                                                            )
+                                                        }
+                                                        onClick={(e) =>
+                                                            e.stopPropagation()
+                                                        }
+                                                    />
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2 mb-1">
+                                                            <CardTitle className="text-base group-hover:text-primary transition-colors">
+                                                                {task.name}
+                                                            </CardTitle>
+                                                            {task.isStarred && (
+                                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                            )}
+                                                        </div>
+                                                        {task.description && (
+                                                            <CardDescription className="line-clamp-2">
+                                                                {
+                                                                    task.description
+                                                                }
+                                                            </CardDescription>
+                                                        )}
                                                     </div>
                                                 </div>
-                                            );
-                                        })()}
-                                    </td>
-                                    <td className="p-4">
-                                        <div className="flex items-center gap-1">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(task)}
-                                                className="h-8 w-8"
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    handleCheckToggle(task.id)
-                                                }
-                                                className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                                            >
-                                                <Check className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() =>
-                                                    handleDelete(task.id)
-                                                }
-                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </CardContent>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            onClick={() =>
+                                                                handleEdit(task)
+                                                            }
+                                                        >
+                                                            <Edit className="h-4 w-4 mr-2" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() =>
+                                                                toggleStar(
+                                                                    task.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <Star className="h-4 w-4 mr-2" />
+                                                            {task.isStarred
+                                                                ? "Unstar"
+                                                                : "Star"}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() =>
+                                                                handleComplete(
+                                                                    task.id
+                                                                )
+                                                            }
+                                                        >
+                                                            <Check className="h-4 w-4 mr-2" />
+                                                            Mark Complete
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    task.id
+                                                                )
+                                                            }
+                                                            className="text-red-600"
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-2" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                            {/* Status and Priority */}
+                                            <div className="flex items-center gap-2">
+                                                <Select
+                                                    value={task.status}
+                                                    onValueChange={(
+                                                        value: Task["status"]
+                                                    ) =>
+                                                        updateTaskStatus(
+                                                            task.id,
+                                                            value
+                                                        )
+                                                    }
+                                                >
+                                                    <SelectTrigger
+                                                        className={cn(
+                                                            "w-auto h-7 text-xs",
+                                                            statusConfig[
+                                                                task.status
+                                                            ].color
+                                                        )}
+                                                    >
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {Object.entries(
+                                                            statusConfig
+                                                        ).map(
+                                                            ([key, config]) => (
+                                                                <SelectItem
+                                                                    key={key}
+                                                                    value={key}
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <config.icon className="h-3 w-3" />
+                                                                        {
+                                                                            config.label
+                                                                        }
+                                                                    </div>
+                                                                </SelectItem>
+                                                            )
+                                                        )}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-            {/* Confirmation Dialog */}
+                                            {/* Tags */}
+                                            {task.tags.length > 0 && (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {task.tags.map((tag) => (
+                                                        <Badge
+                                                            key={tag}
+                                                            variant="secondary"
+                                                            className="text-xs"
+                                                        >
+                                                            {tag}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
+
+                                            {/* Team Members */}
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex -space-x-2">
+                                                    {task.members
+                                                        .slice(0, 3)
+                                                        .map((memberId) => {
+                                                            const member =
+                                                                mockUsers.find(
+                                                                    (u) =>
+                                                                        u.id ===
+                                                                        memberId
+                                                                );
+                                                            return (
+                                                                <Avatar
+                                                                    key={
+                                                                        memberId
+                                                                    }
+                                                                    className="h-6 w-6 border-2 border-background"
+                                                                >
+                                                                    <AvatarImage
+                                                                        src={
+                                                                            member?.avatar ||
+                                                                            "/placeholder.svg"
+                                                                        }
+                                                                        alt={
+                                                                            member?.name
+                                                                        }
+                                                                    />
+                                                                    <AvatarFallback className="text-xs">
+                                                                        {
+                                                                            memberId
+                                                                        }
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                            );
+                                                        })}
+                                                    {task.members.length >
+                                                        3 && (
+                                                        <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                                                            +
+                                                            {task.members
+                                                                .length - 3}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                    <Users className="h-3 w-3" />
+                                                    <span>
+                                                        {task.members.length}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Due Date */}
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-1 text-muted-foreground">
+                                                    <Calendar className="h-3 w-3" />
+                                                    <span>
+                                                        {deadlineInfo.deadline}
+                                                    </span>
+                                                </div>
+                                                <div
+                                                    className={cn(
+                                                        "flex items-center gap-1 text-xs",
+                                                        deadlineInfo.isOverdue
+                                                            ? "text-red-600"
+                                                            : deadlineInfo.urgency ===
+                                                              "high"
+                                                            ? "text-orange-600"
+                                                            : deadlineInfo.urgency ===
+                                                              "medium"
+                                                            ? "text-yellow-600"
+                                                            : "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>
+                                                        {deadlineInfo.remaining}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* Time Tracking */}
+                                            {task.estimatedHours && (
+                                                <div className="text-xs text-muted-foreground">
+                                                    <div className="flex justify-between">
+                                                        <span>
+                                                            Estimated:{" "}
+                                                            {
+                                                                task.estimatedHours
+                                                            }
+                                                            h
+                                                        </span>
+                                                        <span>
+                                                            Actual:{" "}
+                                                            {task.actualHours ||
+                                                                0}
+                                                            h
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        /* List View */
+                        <div className="space-y-2">
+                            {filteredTasks.map((task) => {
+                                const deadlineInfo = formatDeadlineInfo(
+                                    task.dueDate
+                                );
+                                const StatusIcon =
+                                    statusConfig[task.status].icon;
+
+                                return (
+                                    <Card
+                                        key={task.id}
+                                        className={cn(
+                                            "hover:shadow-md transition-shadow",
+                                            selectedIds.includes(task.id) &&
+                                                "ring-2 ring-primary"
+                                        )}
+                                    >
+                                        <CardContent className="p-4">
+                                            <div className="flex items-center gap-4">
+                                                <Checkbox
+                                                    checked={selectedIds.includes(
+                                                        task.id
+                                                    )}
+                                                    onCheckedChange={() =>
+                                                        toggleTaskSelection(
+                                                            task.id
+                                                        )
+                                                    }
+                                                />
+                                                <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
+                                                    <div className="md:col-span-2">
+                                                        <div className="flex items-center gap-2">
+                                                            <h3 className="font-medium">
+                                                                {task.name}
+                                                            </h3>
+                                                            {task.isStarred && (
+                                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                                                            )}
+                                                        </div>
+                                                        {task.description && (
+                                                            <p className="text-sm text-muted-foreground line-clamp-1">
+                                                                {
+                                                                    task.description
+                                                                }
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={cn(
+                                                                "text-xs",
+                                                                statusConfig[
+                                                                    task.status
+                                                                ].color
+                                                            )}
+                                                        >
+                                                            <StatusIcon className="h-3 w-3 mr-1" />
+                                                            {
+                                                                statusConfig[
+                                                                    task.status
+                                                                ].label
+                                                            }
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="flex -space-x-1">
+                                                        {task.members
+                                                            .slice(0, 3)
+                                                            .map((memberId) => (
+                                                                <Avatar
+                                                                    key={
+                                                                        memberId
+                                                                    }
+                                                                    className="h-6 w-6 border-2 border-background"
+                                                                >
+                                                                    <AvatarFallback className="text-xs">
+                                                                        {
+                                                                            memberId
+                                                                        }
+                                                                    </AvatarFallback>
+                                                                </Avatar>
+                                                            ))}
+                                                        {task.members.length >
+                                                            3 && (
+                                                            <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
+                                                                +
+                                                                {task.members
+                                                                    .length - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="text-sm text-muted-foreground">
+                                                        <div>
+                                                            {
+                                                                deadlineInfo.deadline
+                                                            }
+                                                        </div>
+                                                        <div
+                                                            className={cn(
+                                                                "text-xs",
+                                                                deadlineInfo.isOverdue
+                                                                    ? "text-red-600"
+                                                                    : "text-muted-foreground"
+                                                            )}
+                                                        >
+                                                            {
+                                                                deadlineInfo.remaining
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleEdit(task)
+                                                            }
+                                                            className="h-8 w-8"
+                                                        >
+                                                            <Pencil className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleComplete(
+                                                                    task.id
+                                                                )
+                                                            }
+                                                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                                        >
+                                                            <Check className="w-4 h-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    task.id
+                                                                )
+                                                            }
+                                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </>
+            ) : (
+                /* Empty State */
+                <Card className="text-center py-12">
+                    <CardContent>
+                        <Target className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2">
+                            {searchQuery || statusFilter !== "all"
+                                ? "No tasks found"
+                                : "No tasks yet"}
+                        </h3>
+                        <p className="text-muted-foreground mb-4">
+                            {searchQuery || statusFilter !== "all"
+                                ? "Try adjusting your search criteria or filters."
+                                : "Create your first task to get started."}
+                        </p>
+                        <Button>
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Task
+                        </Button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* Dialogs */}
             <Dialog
                 open={
                     dialog.open &&
-                    (dialog.type === "delete" || dialog.type === "check")
+                    (dialog.type === "delete" || dialog.type === "complete")
                 }
-                onOpenChange={(open: boolean) =>
+                onOpenChange={(open) =>
                     !open && setDialog({ open: false, type: "", id: null })
                 }
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent>
                     <DialogHeader>
                         <DialogTitle>
                             {dialog.type === "delete"
                                 ? "Delete Task"
-                                : "Mark as Complete"}
+                                : "Complete Task"}
                         </DialogTitle>
-                    </DialogHeader>
-                    <div className="py-4">
-                        <p className="text-sm text-muted-foreground">
-                            Are you sure you want to{" "}
+                        <DialogDescription>
                             {dialog.type === "delete"
-                                ? "delete this task? This action cannot be undone."
-                                : "mark this task as complete?"}
-                        </p>
-                    </div>
-                    <DialogFooter className="gap-2">
+                                ? "Are you sure you want to delete this task? This action cannot be undone."
+                                : "Are you sure you want to mark this task as complete?"}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -463,9 +1125,7 @@ const TaskList: React.FC = () => {
                                     : "default"
                             }
                         >
-                            {dialog.type === "delete"
-                                ? "Delete"
-                                : "Mark Complete"}
+                            {dialog.type === "delete" ? "Delete" : "Complete"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -474,121 +1134,154 @@ const TaskList: React.FC = () => {
             {/* Edit Dialog */}
             <Dialog
                 open={dialog.open && dialog.type === "edit"}
-                onOpenChange={(open: boolean) =>
+                onOpenChange={(open) =>
                     !open && setDialog({ open: false, type: "", id: null })
                 }
             >
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="max-w-2xl">
                     <DialogHeader>
                         <DialogTitle>Edit Task</DialogTitle>
+                        <DialogDescription>
+                            Update task details and settings.
+                        </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="name">Task Name</Label>
+                        <div className="grid gap-2">
+                            <Label htmlFor="task-name">Task Name</Label>
                             <Input
-                                id="name"
+                                id="task-name"
                                 value={editTask.name}
-                                onChange={(
-                                    e: React.ChangeEvent<HTMLInputElement>
-                                ) =>
+                                onChange={(e) =>
                                     setEditTask({
                                         ...editTask,
                                         name: e.target.value,
                                     })
                                 }
-                                className="w-full"
                             />
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="grid gap-2">
+                            <Label htmlFor="task-description">
+                                Description
+                            </Label>
+                            <Textarea
+                                id="task-description"
+                                value={editTask.description}
+                                onChange={(e) =>
+                                    setEditTask({
+                                        ...editTask,
+                                        description: e.target.value,
+                                    })
+                                }
+                                rows={3}
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>Status</Label>
+                                <Select
+                                    value={editTask.status}
+                                    onValueChange={(value: Task["status"]) =>
+                                        setEditTask({
+                                            ...editTask,
+                                            status: value,
+                                        })
+                                    }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Object.entries(statusConfig).map(
+                                            ([key, config]) => (
+                                                <SelectItem
+                                                    key={key}
+                                                    value={key}
+                                                >
+                                                    {config.label}
+                                                </SelectItem>
+                                            )
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid gap-2">
                             <Label>Team Members</Label>
                             <div className="flex flex-wrap gap-2">
                                 {mockUsers.map((user) => (
                                     <Badge
-                                        key={user}
+                                        key={user.id}
                                         variant="secondary"
+                                        className={cn(
+                                            "cursor-pointer transition-all hover:scale-105",
+                                            editTask.members.includes(user.id)
+                                                ? "bg-primary text-primary-foreground"
+                                                : "bg-secondary text-secondary-foreground"
+                                        )}
                                         onClick={() => {
-                                            const selected = editTask.members
-                                                .split(",")
-                                                .map((m) => m.trim())
-                                                .filter((m) => m);
                                             const isSelected =
-                                                selected.includes(user);
-                                            const updated = isSelected
-                                                ? selected.filter(
-                                                      (m) => m !== user
-                                                  )
-                                                : [...selected, user];
+                                                editTask.members.includes(
+                                                    user.id
+                                                );
                                             setEditTask({
                                                 ...editTask,
-                                                members: updated.join(", "),
+                                                members: isSelected
+                                                    ? editTask.members.filter(
+                                                          (m) => m !== user.id
+                                                      )
+                                                    : [
+                                                          ...editTask.members,
+                                                          user.id,
+                                                      ],
                                             });
                                         }}
-                                        className={cn(
-                                            "cursor-pointer transition-colors hover:scale-105",
-                                            editTask.members
-                                                .split(",")
-                                                .map((m) => m.trim())
-                                                .includes(user)
-                                                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                                                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                                        )}
                                     >
-                                        {user}
+                                        {user.id}
                                     </Badge>
                                 ))}
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Select
-                                value={editTask.status}
-                                onValueChange={(
-                                    value:
-                                        | "Untagged"
-                                        | "To Do"
-                                        | "Processing"
-                                        | "Done"
-                                ) =>
-                                    setEditTask({ ...editTask, status: value })
-                                }
-                            >
-                                <SelectTrigger id="status">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Untagged">
-                                        Untagged
-                                    </SelectItem>
-                                    <SelectItem value="To Do">To Do</SelectItem>
-                                    <SelectItem value="Processing">
-                                        Processing
-                                    </SelectItem>
-                                    <SelectItem value="Done">Done</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="due-date">Due Date</Label>
+                                <Input
+                                    id="due-date"
+                                    type="datetime-local"
+                                    value={editTask.dueDate.slice(0, 16)}
+                                    onChange={(e) =>
+                                        setEditTask({
+                                            ...editTask,
+                                            dueDate: e.target.value + ":00",
+                                        })
+                                    }
+                                />
+                            </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="dueDate">Due Date</Label>
-                            <Input
-                                id="dueDate"
-                                type="datetime-local"
-                                value={editTask.dueDate.slice(0, 16)}
-                                onChange={(
-                                    e: React.ChangeEvent<HTMLInputElement>
-                                ) =>
-                                    setEditTask({
-                                        ...editTask,
-                                        dueDate: e.target.value + ":00",
-                                    })
-                                }
-                                className="[&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:dark:filter [&::-webkit-calendar-picker-indicator]:dark:invert"
-                            />
+                            <div className="grid gap-2">
+                                <Label htmlFor="estimated-hours">
+                                    Estimated Hours
+                                </Label>
+                                <Input
+                                    id="estimated-hours"
+                                    type="number"
+                                    value={editTask.estimatedHours}
+                                    onChange={(e) =>
+                                        setEditTask({
+                                            ...editTask,
+                                            estimatedHours: Number(
+                                                e.target.value
+                                            ),
+                                        })
+                                    }
+                                />
+                            </div>
                         </div>
                     </div>
-                    <DialogFooter className="gap-2">
+                    <DialogFooter>
                         <Button
                             variant="outline"
                             onClick={() =>
@@ -601,7 +1294,7 @@ const TaskList: React.FC = () => {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </Card>
+        </div>
     );
 };
 

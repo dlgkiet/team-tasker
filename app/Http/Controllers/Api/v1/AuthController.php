@@ -12,7 +12,7 @@ use App\Models\RefreshToken;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
-class AuthConller extends Controller
+class AuthController extends Controller
 {
     // Register
     public function createUser(Request $request)
@@ -52,7 +52,7 @@ class AuthConller extends Controller
     {
         try {
             $validator = Validator::make($request->all(), [
-                'email' => 'required|string|email|unique:users,email',
+                'email' => 'required|string|email|exists:users,email',
                 'password' => 'required',
                 'remember_me' => 'boolean',
             ]);

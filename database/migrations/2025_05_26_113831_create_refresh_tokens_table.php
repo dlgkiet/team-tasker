@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tasks', function (Blueprint $table) {
+        Schema::create('refresh_tokens', function (Blueprint $table) {
             $table->id();
-            $table->string('title');
-            $table->enum('status', ['U', 'T', 'I', 'R', 'D']);
-            $table->dateTime('due_date')->nullable();
             $table->timestamps();
         });
     }
@@ -25,6 +22,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tasks');
+        Schema::dropIfExists('refresh_tokens');
     }
 };

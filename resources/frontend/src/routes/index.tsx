@@ -6,11 +6,13 @@ import {
     useLocation,
 } from "react-router-dom";
 import Dashboard from "../pages/dashboard";
-import Projects from "../pages/projects/projects";
+import Projects from "../pages/projects";
 import Register from "../pages/auth/register";
 import Login from "../pages/auth/login";
 import ProjectDetail from "../pages/projects/project-detail";
 import Profile from "../pages/settings/profile";
+import Teams from "../pages/teams";
+import TeamDetail from "../pages/teams/team-detail";
 
 const Wrapper = ({ children }: PropsWithChildren) => {
     const location = useLocation();
@@ -45,6 +47,14 @@ const routes = [
     {
         path: "/profile",
         element: <Profile />,
+    },
+    {
+        path: "/teams",
+        element: <Teams />,
+    },
+    {
+        path: "/teams/:teamId",
+        element: <TeamDetail />,
     },
 ];
 
