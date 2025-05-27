@@ -1,15 +1,11 @@
+"use client";
+
 import type React from "react";
 import { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,19 +19,20 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table";
 import {
     AlertCircle,
     Calendar,
@@ -44,19 +41,14 @@ import {
     Clock,
     Edit,
     Filter,
-    Grid3X3,
-    List,
-    MoreHorizontal,
     Plus,
     Search,
     Star,
     Trash2,
     Users,
     X,
-    Flag,
     Target,
     Timer,
-    Pencil,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -210,7 +202,6 @@ const TaskList: React.FC = () => {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState<string>("all");
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
     const [dialog, setDialog] = useState<DialogState>({
         open: false,
         type: "",
@@ -556,34 +547,6 @@ const TaskList: React.FC = () => {
                                     <SelectItem value="done">Done</SelectItem>
                                 </SelectContent>
                             </Select>
-
-                            {/* View Mode Toggle */}
-                            <div className="flex border rounded-md">
-                                <Button
-                                    variant={
-                                        viewMode === "grid"
-                                            ? "default"
-                                            : "ghost"
-                                    }
-                                    size="sm"
-                                    onClick={() => setViewMode("grid")}
-                                    className="rounded-r-none"
-                                >
-                                    <Grid3X3 className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                    variant={
-                                        viewMode === "list"
-                                            ? "default"
-                                            : "ghost"
-                                    }
-                                    size="sm"
-                                    onClick={() => setViewMode("list")}
-                                    className="rounded-l-none"
-                                >
-                                    <List className="h-4 w-4" />
-                                </Button>
-                            </div>
                         </div>
                     </div>
 
@@ -594,9 +557,6 @@ const TaskList: React.FC = () => {
                                 {selectedIds.length} tasks selected
                             </span>
                             <div className="flex gap-2">
-                                <Button size="sm" variant="outline">
-                                    Bulk Edit
-                                </Button>
                                 <Button size="sm" variant="outline">
                                     Mark Complete
                                 </Button>
@@ -612,41 +572,51 @@ const TaskList: React.FC = () => {
             {/* Tasks Display */}
             {filteredTasks.length > 0 ? (
                 <>
-                    {/* Select All */}
-                    <div className="flex items-center gap-2">
-                        <Checkbox
-                            checked={
-                                selectedIds.length === filteredTasks.length &&
-                                filteredTasks.length > 0
-                            }
-                            onCheckedChange={toggleSelectAll}
-                        />
-                        <span className="text-sm text-muted-foreground">
-                            Select all ({filteredTasks.length} tasks)
-                        </span>
-                    </div>
+                    {/* Table View */}
+                    <Card>
+                        <CardContent className="p-0">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead className="w-12">
+                                            <Checkbox
+                                                checked={
+                                                    selectedIds.length ===
+                                                        filteredTasks.length &&
+                                                    filteredTasks.length > 0
+                                                }
+                                                onCheckedChange={
+                                                    toggleSelectAll
+                                                }
+                                            />
+                                        </TableHead>
+                                        <TableHead>Task</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Tags</TableHead>
+                                        <TableHead>Assignees</TableHead>
+                                        <TableHead>Due Date</TableHead>
+                                        <TableHead className="w-32">
+                                            Actions
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredTasks.map((task) => {
+                                        const deadlineInfo = formatDeadlineInfo(
+                                            task.dueDate
+                                        );
 
-                    {viewMode === "grid" ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {filteredTasks.map((task) => {
-                                const deadlineInfo = formatDeadlineInfo(
-                                    task.dueDate
-                                );
-                                const StatusIcon =
-                                    statusConfig[task.status].icon;
-
-                                return (
-                                    <Card
-                                        key={task.id}
-                                        className={cn(
-                                            "group hover:shadow-lg transition-all duration-300 cursor-pointer",
-                                            selectedIds.includes(task.id) &&
-                                                "ring-2 ring-primary"
-                                        )}
-                                    >
-                                        <CardHeader className="pb-3">
-                                            <div className="flex items-start justify-between">
-                                                <div className="flex items-start gap-3 flex-1">
+                                        return (
+                                            <TableRow
+                                                key={task.id}
+                                                className={cn(
+                                                    "hover:bg-muted/50 transition-colors",
+                                                    selectedIds.includes(
+                                                        task.id
+                                                    ) && "bg-muted/50"
+                                                )}
+                                            >
+                                                <TableCell>
                                                     <Checkbox
                                                         checked={selectedIds.includes(
                                                             task.id
@@ -656,288 +626,10 @@ const TaskList: React.FC = () => {
                                                                 task.id
                                                             )
                                                         }
-                                                        onClick={(e) =>
-                                                            e.stopPropagation()
-                                                        }
                                                     />
-                                                    <div className="flex-1">
-                                                        <div className="flex items-center gap-2 mb-1">
-                                                            <CardTitle className="text-base group-hover:text-primary transition-colors">
-                                                                {task.name}
-                                                            </CardTitle>
-                                                            {task.isStarred && (
-                                                                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                                                            )}
-                                                        </div>
-                                                        {task.description && (
-                                                            <CardDescription className="line-clamp-2">
-                                                                {
-                                                                    task.description
-                                                                }
-                                                            </CardDescription>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger
-                                                        asChild
-                                                    >
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="h-8 w-8 p-0"
-                                                        >
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleEdit(task)
-                                                            }
-                                                        >
-                                                            <Edit className="h-4 w-4 mr-2" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                toggleStar(
-                                                                    task.id
-                                                                )
-                                                            }
-                                                        >
-                                                            <Star className="h-4 w-4 mr-2" />
-                                                            {task.isStarred
-                                                                ? "Unstar"
-                                                                : "Star"}
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleComplete(
-                                                                    task.id
-                                                                )
-                                                            }
-                                                        >
-                                                            <Check className="h-4 w-4 mr-2" />
-                                                            Mark Complete
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuSeparator />
-                                                        <DropdownMenuItem
-                                                            onClick={() =>
-                                                                handleDelete(
-                                                                    task.id
-                                                                )
-                                                            }
-                                                            className="text-red-600"
-                                                        >
-                                                            <Trash2 className="h-4 w-4 mr-2" />
-                                                            Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="space-y-4">
-                                            {/* Status and Priority */}
-                                            <div className="flex items-center gap-2">
-                                                <Select
-                                                    value={task.status}
-                                                    onValueChange={(
-                                                        value: Task["status"]
-                                                    ) =>
-                                                        updateTaskStatus(
-                                                            task.id,
-                                                            value
-                                                        )
-                                                    }
-                                                >
-                                                    <SelectTrigger
-                                                        className={cn(
-                                                            "w-auto h-7 text-xs",
-                                                            statusConfig[
-                                                                task.status
-                                                            ].color
-                                                        )}
-                                                    >
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        {Object.entries(
-                                                            statusConfig
-                                                        ).map(
-                                                            ([key, config]) => (
-                                                                <SelectItem
-                                                                    key={key}
-                                                                    value={key}
-                                                                >
-                                                                    <div className="flex items-center gap-2">
-                                                                        <config.icon className="h-3 w-3" />
-                                                                        {
-                                                                            config.label
-                                                                        }
-                                                                    </div>
-                                                                </SelectItem>
-                                                            )
-                                                        )}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            {/* Tags */}
-                                            {task.tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-1">
-                                                    {task.tags.map((tag) => (
-                                                        <Badge
-                                                            key={tag}
-                                                            variant="secondary"
-                                                            className="text-xs"
-                                                        >
-                                                            {tag}
-                                                        </Badge>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            {/* Team Members */}
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex -space-x-2">
-                                                    {task.members
-                                                        .slice(0, 3)
-                                                        .map((memberId) => {
-                                                            const member =
-                                                                mockUsers.find(
-                                                                    (u) =>
-                                                                        u.id ===
-                                                                        memberId
-                                                                );
-                                                            return (
-                                                                <Avatar
-                                                                    key={
-                                                                        memberId
-                                                                    }
-                                                                    className="h-6 w-6 border-2 border-background"
-                                                                >
-                                                                    <AvatarImage
-                                                                        src={
-                                                                            member?.avatar ||
-                                                                            "/placeholder.svg"
-                                                                        }
-                                                                        alt={
-                                                                            member?.name
-                                                                        }
-                                                                    />
-                                                                    <AvatarFallback className="text-xs">
-                                                                        {
-                                                                            memberId
-                                                                        }
-                                                                    </AvatarFallback>
-                                                                </Avatar>
-                                                            );
-                                                        })}
-                                                    {task.members.length >
-                                                        3 && (
-                                                        <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
-                                                            +
-                                                            {task.members
-                                                                .length - 3}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                    <Users className="h-3 w-3" />
-                                                    <span>
-                                                        {task.members.length}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Due Date */}
-                                            <div className="flex items-center justify-between text-sm">
-                                                <div className="flex items-center gap-1 text-muted-foreground">
-                                                    <Calendar className="h-3 w-3" />
-                                                    <span>
-                                                        {deadlineInfo.deadline}
-                                                    </span>
-                                                </div>
-                                                <div
-                                                    className={cn(
-                                                        "flex items-center gap-1 text-xs",
-                                                        deadlineInfo.isOverdue
-                                                            ? "text-red-600"
-                                                            : deadlineInfo.urgency ===
-                                                              "high"
-                                                            ? "text-orange-600"
-                                                            : deadlineInfo.urgency ===
-                                                              "medium"
-                                                            ? "text-yellow-600"
-                                                            : "text-muted-foreground"
-                                                    )}
-                                                >
-                                                    <Clock className="h-3 w-3" />
-                                                    <span>
-                                                        {deadlineInfo.remaining}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            {/* Time Tracking */}
-                                            {task.estimatedHours && (
-                                                <div className="text-xs text-muted-foreground">
-                                                    <div className="flex justify-between">
-                                                        <span>
-                                                            Estimated:{" "}
-                                                            {
-                                                                task.estimatedHours
-                                                            }
-                                                            h
-                                                        </span>
-                                                        <span>
-                                                            Actual:{" "}
-                                                            {task.actualHours ||
-                                                                0}
-                                                            h
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    ) : (
-                        /* List View */
-                        <div className="space-y-2">
-                            {filteredTasks.map((task) => {
-                                const deadlineInfo = formatDeadlineInfo(
-                                    task.dueDate
-                                );
-                                const StatusIcon =
-                                    statusConfig[task.status].icon;
-
-                                return (
-                                    <Card
-                                        key={task.id}
-                                        className={cn(
-                                            "hover:shadow-md transition-shadow",
-                                            selectedIds.includes(task.id) &&
-                                                "ring-2 ring-primary"
-                                        )}
-                                    >
-                                        <CardContent className="p-4">
-                                            <div className="flex items-center gap-4">
-                                                <Checkbox
-                                                    checked={selectedIds.includes(
-                                                        task.id
-                                                    )}
-                                                    onCheckedChange={() =>
-                                                        toggleTaskSelection(
-                                                            task.id
-                                                        )
-                                                    }
-                                                />
-                                                <div className="flex-1 grid grid-cols-1 md:grid-cols-6 gap-4 items-center">
-                                                    <div className="md:col-span-2">
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="space-y-1">
                                                         <div className="flex items-center gap-2">
                                                             <h3 className="font-medium">
                                                                 {task.name}
@@ -947,120 +639,266 @@ const TaskList: React.FC = () => {
                                                             )}
                                                         </div>
                                                         {task.description && (
-                                                            <p className="text-sm text-muted-foreground line-clamp-1">
+                                                            <p className="text-sm text-muted-foreground line-clamp-2 max-w-md">
                                                                 {
                                                                     task.description
                                                                 }
                                                             </p>
                                                         )}
                                                     </div>
-                                                    <div className="flex items-center gap-2">
-                                                        <Badge
-                                                            variant="outline"
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Select
+                                                        value={task.status}
+                                                        onValueChange={(
+                                                            value: Task["status"]
+                                                        ) =>
+                                                            updateTaskStatus(
+                                                                task.id,
+                                                                value
+                                                            )
+                                                        }
+                                                    >
+                                                        <SelectTrigger
                                                             className={cn(
-                                                                "text-xs",
+                                                                "w-auto h-8 text-xs",
                                                                 statusConfig[
                                                                     task.status
                                                                 ].color
                                                             )}
                                                         >
-                                                            <StatusIcon className="h-3 w-3 mr-1" />
-                                                            {
-                                                                statusConfig[
-                                                                    task.status
-                                                                ].label
-                                                            }
-                                                        </Badge>
-                                                    </div>
-                                                    <div className="flex -space-x-1">
-                                                        {task.members
-                                                            .slice(0, 3)
-                                                            .map((memberId) => (
-                                                                <Avatar
-                                                                    key={
-                                                                        memberId
-                                                                    }
-                                                                    className="h-6 w-6 border-2 border-background"
-                                                                >
-                                                                    <AvatarFallback className="text-xs">
-                                                                        {
-                                                                            memberId
+                                                            <SelectValue />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {Object.entries(
+                                                                statusConfig
+                                                            ).map(
+                                                                ([
+                                                                    key,
+                                                                    config,
+                                                                ]) => (
+                                                                    <SelectItem
+                                                                        key={
+                                                                            key
                                                                         }
-                                                                    </AvatarFallback>
-                                                                </Avatar>
+                                                                        value={
+                                                                            key
+                                                                        }
+                                                                    >
+                                                                        <div className="flex items-center gap-2">
+                                                                            <config.icon className="h-3 w-3" />
+                                                                            {
+                                                                                config.label
+                                                                            }
+                                                                        </div>
+                                                                    </SelectItem>
+                                                                )
+                                                            )}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {task.tags
+                                                            .slice(0, 2)
+                                                            .map((tag) => (
+                                                                <Badge
+                                                                    key={tag}
+                                                                    variant="secondary"
+                                                                    className="text-xs"
+                                                                >
+                                                                    {tag}
+                                                                </Badge>
                                                             ))}
-                                                        {task.members.length >
-                                                            3 && (
-                                                            <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
+                                                        {task.tags.length >
+                                                            2 && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
                                                                 +
-                                                                {task.members
-                                                                    .length - 3}
-                                                            </div>
+                                                                {task.tags
+                                                                    .length - 2}
+                                                            </Badge>
                                                         )}
                                                     </div>
-                                                    <div className="text-sm text-muted-foreground">
-                                                        <div>
-                                                            {
-                                                                deadlineInfo.deadline
-                                                            }
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex -space-x-1">
+                                                            {task.members
+                                                                .slice(0, 3)
+                                                                .map(
+                                                                    (
+                                                                        memberId
+                                                                    ) => {
+                                                                        const member =
+                                                                            mockUsers.find(
+                                                                                (
+                                                                                    u
+                                                                                ) =>
+                                                                                    u.id ===
+                                                                                    memberId
+                                                                            );
+                                                                        return (
+                                                                            <Avatar
+                                                                                key={
+                                                                                    memberId
+                                                                                }
+                                                                                className="h-6 w-6 border-2 border-background"
+                                                                            >
+                                                                                <AvatarImage
+                                                                                    src={
+                                                                                        member?.avatar ||
+                                                                                        "/placeholder.svg"
+                                                                                    }
+                                                                                    alt={
+                                                                                        member?.name
+                                                                                    }
+                                                                                />
+                                                                                <AvatarFallback className="text-xs">
+                                                                                    {
+                                                                                        memberId
+                                                                                    }
+                                                                                </AvatarFallback>
+                                                                            </Avatar>
+                                                                        );
+                                                                    }
+                                                                )}
+                                                            {task.members
+                                                                .length > 3 && (
+                                                                <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs font-medium">
+                                                                    +
+                                                                    {task
+                                                                        .members
+                                                                        .length -
+                                                                        3}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                                            <Users className="h-3 w-3" />
+                                                            <span>
+                                                                {
+                                                                    task.members
+                                                                        .length
+                                                                }
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="space-y-1">
+                                                        <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                                            <Calendar className="h-3 w-3" />
+                                                            <span>
+                                                                {
+                                                                    deadlineInfo.deadline
+                                                                }
+                                                            </span>
                                                         </div>
                                                         <div
                                                             className={cn(
-                                                                "text-xs",
+                                                                "flex items-center gap-1 text-xs",
                                                                 deadlineInfo.isOverdue
                                                                     ? "text-red-600"
+                                                                    : deadlineInfo.urgency ===
+                                                                      "high"
+                                                                    ? "text-orange-600"
+                                                                    : deadlineInfo.urgency ===
+                                                                      "medium"
+                                                                    ? "text-yellow-600"
                                                                     : "text-muted-foreground"
                                                             )}
                                                         >
-                                                            {
-                                                                deadlineInfo.remaining
-                                                            }
+                                                            <Clock className="h-3 w-3" />
+                                                            <span>
+                                                                {
+                                                                    deadlineInfo.remaining
+                                                                }
+                                                            </span>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center justify-end gap-2">
+                                                </TableCell>
+
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-1">
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
-                                                                handleEdit(task)
-                                                            }
-                                                            className="h-8 w-8"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                handleEdit(
+                                                                    task
+                                                                );
+                                                            }}
+                                                            className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-600"
                                                         >
-                                                            <Pencil className="w-4 h-4" />
+                                                            <Edit className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                toggleStar(
+                                                                    task.id
+                                                                );
+                                                            }}
+                                                            className={cn(
+                                                                "h-8 w-8 p-0",
+                                                                task.isStarred
+                                                                    ? "hover:bg-yellow-100 text-yellow-500 hover:text-yellow-600"
+                                                                    : "hover:bg-yellow-100 hover:text-yellow-600"
+                                                            )}
+                                                        >
+                                                            <Star
+                                                                className={cn(
+                                                                    "h-4 w-4",
+                                                                    task.isStarred &&
+                                                                        "fill-current"
+                                                                )}
+                                                            />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
                                                                 handleComplete(
                                                                     task.id
-                                                                )
-                                                            }
-                                                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                                                                );
+                                                            }}
+                                                            className="h-8 w-8 p-0 hover:bg-green-100 hover:text-green-600"
                                                         >
-                                                            <Check className="w-4 h-4" />
+                                                            <Check className="h-4 w-4" />
                                                         </Button>
                                                         <Button
                                                             variant="ghost"
-                                                            size="icon"
-                                                            onClick={() =>
+                                                            size="sm"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
                                                                 handleDelete(
                                                                     task.id
-                                                                )
-                                                            }
-                                                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                                );
+                                                            }}
+                                                            className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600"
                                                         >
-                                                            <Trash2 className="w-4 h-4" />
+                                                            <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                 </>
             ) : (
                 /* Empty State */

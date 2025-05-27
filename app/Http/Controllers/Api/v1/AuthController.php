@@ -70,6 +70,7 @@ class AuthController extends Controller
                 return $this->sendError(__('Email or password is not correct'), [], 401);
             }
 
+            /** @var \App\Models\User $user */
             $user = Auth::user();
             $user->avatar = $user->avatar ? url($user->avatar) : null;
 
